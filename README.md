@@ -13,7 +13,8 @@ Y cuenta con los siguientes componentes en su arquitectura (orientada a aws)
 2. **RDS:** Base de datos
 3. **S3:** Donde se guardarán los archivos enviados desde el Frontend
 4. **SQS:** Cola para archivos guardados en S3
-5. **RedShift:** Warehouse serverless para cargar la data de los archivos
+5. **Lambda:** Donde estará desplegado el Load Pipeline
+6. **RedShift:** Warehouse serverless para cargar la data de los archivos
 
 # Proceso
 
