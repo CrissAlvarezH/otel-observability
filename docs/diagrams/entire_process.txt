@@ -1,0 +1,53 @@
+// app.eraser.io (Sequence Diagram)
+
+title Upload file to s3 and copy its content to a warehouse
+
+typeface clean
+
+Frontend [icon: monitor, color: black]
+Files Service [icon: aws-ec2, color: orange]
+Auth Service [icon: aws-ec2, color: orange]
+S3 [icon: aws-s3, color: green]
+Database [icon: aws-rds, color: blue]
+Queue [icon: aws-sqs, color: purple]
+Load Pipeline [icon: aws-lambda, color: orange]
+Warehouse [icon: aws-redshift, color: blue]
+
+Frontend > Files Service: Init upload
+activate Frontend
+activate Files Service
+Files Service <> Auth Service: Validate token
+Files Service <> S3: Request multipart upload id
+Files Service <> Database: Insert new file  
+Files Service --> Frontend: Response upload id
+deactivate Files Service
+
+loop [label: Repeat for every file part, color: black] {
+  Frontend <> Files Service: Get signed url
+  activate Files Service 
+  Files Service <> Auth Service: Validate token
+  Files Service <> S3: get signed url
+  Files Service --> Frontend: return signed url
+  deactivate Files Service 
+  Frontend > S3: Send file part using signed url
+}
+
+
+Frontend > Files Service: Complete 
+activate Files Service
+Files Service <> Auth Service: Validate token
+Files Service <> S3: Request complete multipart 
+Files Service <> Database: Update file status to "stored"
+Files Service <> Queue: Queue a new file
+
+
+Files Service --> Frontend: Success
+deactivate Files Service
+deactivate Frontend
+Load Pipeline < Queue: deque a file
+activate Load Pipeline
+Load Pipeline > Warehouse: Copy file data
+Load Pipeline > Warehouse: Add timestamp column
+Load Pipeline > Database: Update file status to "loaded"
+
+deactivate Load Pipeline
