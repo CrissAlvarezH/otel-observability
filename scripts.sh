@@ -56,6 +56,7 @@ elif [ "$action" == "deploy" ]; then
       git pull; \
     fi && \
     cd apps/frontend && \
+    echo "VITE_API_DOMAIN=$files_service_ip" > .env && \
     docker build -t otel-frontend . && \
     docker run -d --name otel-frontend -p 80:80 otel-frontend'
 
