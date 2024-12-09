@@ -1,0 +1,140 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Resources:
+
+  FrontendInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-03972092c42e8c0ca  # Amazon Linux 2 AMI 64-bit (x86)
+      AvailabilityZone: us-east-1a
+      InstanceType: t3.micro
+      Tags:
+        - Key: Name
+          Value: otel-frontend
+      KeyName: otel-observability
+      SecurityGroups:
+        - !Ref FrontendInstanceSecurityGroup
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          sudo yum update -y
+          echo ">> INSTALLING DOCKER"
+          sudo yum install -y docker
+          sudo service docker start
+          sudo usermod -a -G docker ec2-user
+          docker --version
+          echo ">> INSTALLING DOCKER"
+          sudo yum install -y git
+
+  FrontendInstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      Tags:
+        - Key: App
+          Value: otel-frontend
+        - Key: Name
+          Value: otel-frontend-sg
+      GroupDescription: "otel-frontend security group"
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+
+  FilesServiceInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-03972092c42e8c0ca  # Amazon Linux 2 AMI 64-bit (x86)
+      AvailabilityZone: us-east-1a
+      InstanceType: t3.micro
+      KeyName: otel-observability
+      Tags:
+        - Key: Name
+          Value: otel-files-service
+      IamInstanceProfile: !Ref FilesServiceInstanceProfile
+      SecurityGroups:
+        - !Ref FilesServiceInstanceSecurityGroup
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          sudo yum update -y
+          sudo yum install -y docker
+          sudo service docker start
+          sudo usermod -a -G docker ec2-user
+          docker --version
+          sudo yum install -y git
+
+  FilesServiceInstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      Tags:
+        - Key: App
+          Value: otel-files-service
+        - Key: Name
+          Value: otel-files-service-sg
+      GroupDescription: "otel-files-service security group"
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+
+  FilesServiceInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref FilesServiceInstanceRole
+
+  FilesServiceInstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: S3AccessPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:AbortMultipartUpload
+                  - s3:ListMultipartUploadParts
+                  - s3:CreateMultipartUpload
+                  - s3:CompleteMultipartUpload
+                  - s3:GetObject
+                Resource: !Sub arn:aws:s3:::${Bucket}/*
+
+  Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: otel-files-service
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders: ['*']
+            AllowedMethods: [PUT]
+            AllowedOrigins: [!Sub 'http://${FrontendInstance.PublicIp}']
+            ExposedHeaders: [ETag]
+            MaxAge: 3000
+
+Outputs:
+  FrontendInstancePublicIp:
+    Description: Public IP of the frontend instance
+    Value: !GetAtt FrontendInstance.PublicIp
+
+  FilesServiceInstancePublicIp:
+    Description: Public IP of the files service instance
+    Value: !GetAtt FilesServiceInstance.PublicIp
