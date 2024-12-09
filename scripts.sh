@@ -44,11 +44,12 @@ elif [ "$action" == "deploy" ]; then
   log "Connecting to frontend instance"
 
   frontend_ip=$(sh scripts.sh get-ip frontend)
+  files_service_ip=$(sh scripts.sh get-ip files-service)
 
   ssh -o StrictHostKeyChecking=no \
     -i "./otel-observability.pem" ec2-user@"$frontend_ip" \
-    'cd /home/ec2-user/ && \
-    if [ ! -d "otel-observability" ]; then \
+    "cd /home/ec2-user/ && \
+    if [ ! -d 'otel-observability' ]; then \
       git clone https://github.com/CrissAlvarezH/otel-observability.git && \
       cd otel-observability; \
     else \
@@ -56,13 +57,11 @@ elif [ "$action" == "deploy" ]; then
       git pull; \
     fi && \
     cd apps/frontend && \
-    echo "VITE_API_DOMAIN=$files_service_ip" > .env && \
-    docker build -t otel-frontend . && \
-    docker run -d --name otel-frontend -p 80:80 otel-frontend'
+    echo 'VITE_API_DOMAIN=$files_service_ip' > .env && \
+    docker build --no-cache -t otel-frontend . && \
+    docker run -d --name otel-frontend -p 80:80 otel-frontend"
 
   log "Connecting to files service instance"
-
-  files_service_ip=$(sh scripts.sh get-ip files-service)
 
   ssh -o StrictHostKeyChecking=no \
     -i "./otel-observability.pem" ec2-user@"$files_service_ip" \
@@ -75,7 +74,7 @@ elif [ "$action" == "deploy" ]; then
       git pull; \
     fi && \
     cd apps/files-service && \
-    docker build -t otel-files-service . && \
+    docker build --no-cache -t otel-files-service . && \
     docker stop otel-files-service || true && \
     docker rm otel-files-service || true && \
     docker run -d --name otel-files-service -p 80:80 otel-files-service'
