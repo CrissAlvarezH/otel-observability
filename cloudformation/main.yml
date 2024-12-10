@@ -130,6 +130,35 @@ Resources:
             AllowedOrigins: [!Sub 'http://${FrontendInstance.PublicIp}']
             ExposedHeaders: [ETag]
 
+  DynamoDatabase:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: otel-observability-files
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: data_type
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH # Partition key
+      GlobalSecondaryIndexes:
+        - IndexName: creation_datetime-index
+          KeySchema:
+            # data_type is an artificial attribute to "hack" dynamodb 
+            # because its required add a has key
+            - AttributeName: data_type
+              KeyType: HASH
+            # id is a ULID what is a string of 26 characters that can be ordered
+            - AttributeName: id 
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL # All attributes in table
+      BillingMode: PAY_PER_REQUEST
+      Tags:
+        - Key: Name
+          Value: otel-observability
+
 Outputs:
   FrontendInstancePublicIp:
     Description: Public IP of the frontend instance

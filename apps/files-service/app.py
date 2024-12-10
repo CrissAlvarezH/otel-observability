@@ -1,8 +1,13 @@
 from typing import List
 
-from fastapi import FastAPI, Body
+from fastapi import FastAPI, Body, Query, Path
 from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
+
+from repositories.files import (
+    get_files, update_file, insert_file, InsertFile, UpdateFile,
+    delete_file,
+)
 
 load_dotenv()
 
@@ -51,3 +56,37 @@ def complete_upload_route(
 @app.get("/upload/list-multipart-uploads")
 def list_multipart_uploads_route():
     return list_multipart_uploads()
+
+
+@app.get("/files")
+def get_files_route(
+    page_size: int = Query(default=10),
+    last_id: str = Query(default=None),
+):
+    res = get_files(page_size, last_id)
+
+    if not res["has_more"]:
+        return {"result": res["items"]}
+
+    return {
+        "pagination": {
+            "last_id": res["last_id"],
+            "has_more": res["has_more"],
+        },
+        "result": res["items"],
+    }
+
+
+@app.post("/files")
+def insert_file_route(file: InsertFile):
+    return insert_file(file)
+
+
+@app.put("/files/{id}")
+def update_file_route(file: UpdateFile, id: str = Path()):
+    return update_file(id, file)
+
+
+@app.delete("/files/{id}")
+def delete_file_route(id: str = Path()):
+    return delete_file(id)
