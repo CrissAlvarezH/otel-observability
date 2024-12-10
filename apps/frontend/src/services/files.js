@@ -13,7 +13,6 @@ export const DEFAULT_PART_SIZE = 5;
 export async function uploadFileByParts(file, { batchSize, partSize = DEFAULT_PART_SIZE, onProgress } = {}) {
   const initRes = await fetch(`${API_DOMAIN}/upload/init`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       filename: file.name,
     }),
