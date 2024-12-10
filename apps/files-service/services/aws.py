@@ -12,7 +12,7 @@ class FilePart(BaseModel):
 
 
 def init_upload(filename: str) -> str:
-    s3 = boto3.client('s3')
+    s3 = boto3.client('s3', region_name='us-east-1')
 
     response = s3.create_multipart_upload(
         Bucket=BUCKET_NAME,
@@ -23,7 +23,7 @@ def init_upload(filename: str) -> str:
 
 
 def get_presigned_url(filename: str, upload_id: str, part_number: int) -> str:
-    s3 = boto3.client('s3')
+    s3 = boto3.client('s3', region_name='us-east-1')
 
     return s3.generate_presigned_url(
         'upload_part',
@@ -38,7 +38,7 @@ def get_presigned_url(filename: str, upload_id: str, part_number: int) -> str:
 
 
 def complete_upload(filename: str, upload_id: str, parts: list[FilePart]):
-    s3 = boto3.client('s3')
+    s3 = boto3.client('s3', region_name='us-east-1')
 
     s3.complete_multipart_upload(
         Bucket=BUCKET_NAME,
@@ -46,3 +46,9 @@ def complete_upload(filename: str, upload_id: str, parts: list[FilePart]):
         UploadId=upload_id,
         MultipartUpload={'Parts': parts},
     )
+
+
+def list_multipart_uploads(filename: str) -> list[str]:
+    s3 = boto3.client('s3', region_name='us-east-1')
+
+    return s3.list_multipart_uploads(Bucket=BUCKET_NAME, Prefix=filename)

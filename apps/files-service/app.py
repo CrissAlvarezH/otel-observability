@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Body
+from fastapi import FastAPI, Body, Query
 from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -6,6 +6,7 @@ load_dotenv()
 
 from services.aws import (
     init_upload, FilePart, complete_upload, get_presigned_url,
+    list_multipart_uploads,
 )
 
 app = FastAPI()
@@ -43,3 +44,8 @@ def complete_upload_route(
 ):
     complete_upload(filename, upload_id, parts)
     return {"message": "Upload completed"}
+
+@app.get("/upload/list-multipart-uploads")
+def list_multipart_uploads_route(filename: str = Query()):
+    uploads = list_multipart_uploads(filename)
+    return {"uploads": uploads}

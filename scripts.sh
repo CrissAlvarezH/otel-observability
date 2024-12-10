@@ -82,6 +82,10 @@ elif [ "$action" == "deploy" ]; then
     docker rm otel-files-service 2>/dev/null || true && \
     docker run -d -p 80:80 --name otel-files-service otel-files-service'
 
+  log "Deploy finished"
+  log "Frontend: http://$frontend_ip"
+  log "Files service: http://$files_service_ip"
+
 elif [ "$action" == "get-ip" ]; then
   service=$2
 
