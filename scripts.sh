@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/bin/bash
 
 function log() {
   GREEN='\033[0;32m'
@@ -76,6 +76,7 @@ elif [ "$action" == "deploy" ]; then
       git pull; \
     fi && \
     cd apps/files-service && \
+    echo "S3_BUCKET_NAME=otel-files-service" > .env && \
     docker build -t otel-files-service . && \
     docker stop otel-files-service 2>/dev/null || true && \
     docker rm otel-files-service 2>/dev/null || true && \

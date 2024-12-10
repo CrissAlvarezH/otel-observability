@@ -1,5 +1,7 @@
 from fastapi import FastAPI, Body
 from dotenv import load_dotenv
+from fastapi.middleware.cors import CORSMiddleware
+
 load_dotenv()
 
 from services.aws import (
@@ -7,6 +9,14 @@ from services.aws import (
 )
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.post("/upload/init")
