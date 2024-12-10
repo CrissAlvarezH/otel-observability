@@ -10,7 +10,7 @@ app = FastAPI()
 
 
 @app.post("/upload/init")
-def init_upload(filename: str = Body()):
+def upload_init(filename: str = Body()):
     upload_id = init_upload(filename)
     return {"upload_id": upload_id}
 
