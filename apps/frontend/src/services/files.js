@@ -13,6 +13,7 @@ export const DEFAULT_PART_SIZE = 5;
 export async function uploadFileByParts(file, { batchSize, partSize = DEFAULT_PART_SIZE, onProgress } = {}) {
   const initRes = await fetch(`${API_DOMAIN}/upload/init`, {
     method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       filename: file.name,
     }),
@@ -33,9 +34,10 @@ export async function uploadFileByParts(file, { batchSize, partSize = DEFAULT_PA
 
       const presignedRes = await fetch(`${API_DOMAIN}/upload/get-presigned-url`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           filename: file.name,
-          upload_id:uploadId,
+          upload_id: uploadId,
           part_number: partNumber,
         }),
       });
@@ -71,9 +73,10 @@ export async function uploadFileByParts(file, { batchSize, partSize = DEFAULT_PA
 
   const completeRes = await fetch(`${API_DOMAIN}/upload/complete`, {
     method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       filename: file.name,
-      upload_id:uploadId,
+      upload_id: uploadId,
       // parts must be sorted by part number
       parts: partResults.sort((a, b) => a.PartNumber - b.PartNumber),
     }),
