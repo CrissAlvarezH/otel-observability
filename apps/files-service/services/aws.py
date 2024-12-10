@@ -26,7 +26,7 @@ def get_presigned_url(filename: str, upload_id: str, part_number: int) -> str:
     s3 = boto3.client('s3')
 
     return s3.generate_presigned_url(
-        'put_object',
+        'upload_part',
         Params={
             'Bucket': BUCKET_NAME,
             'Key': filename,
