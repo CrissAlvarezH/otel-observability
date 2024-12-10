@@ -57,9 +57,11 @@ elif [ "$action" == "deploy" ]; then
       git pull; \
     fi && \
     cd apps/frontend && \
-    echo 'VITE_API_DOMAIN=$files_service_ip' > .env && \
-    docker build --no-cache -t otel-frontend . && \
-    docker run -d --name otel-frontend -p 80:80 otel-frontend"
+    echo 'VITE_API_DOMAIN=http://$files_service_ip' > .env && \
+    docker build -t otel-frontend . && \
+    docker stop otel-frontend 2>/dev/null || true && \
+    docker rm otel-frontend 2>/dev/null || true && \
+    docker run -d -p 80:80 --name otel-frontend otel-frontend"
 
   log "Connecting to files service instance"
 
@@ -74,10 +76,10 @@ elif [ "$action" == "deploy" ]; then
       git pull; \
     fi && \
     cd apps/files-service && \
-    docker build --no-cache -t otel-files-service . && \
-    docker stop otel-files-service || true && \
-    docker rm otel-files-service || true && \
-    docker run -d --name otel-files-service -p 80:80 otel-files-service'
+    docker build -t otel-files-service . && \
+    docker stop otel-files-service 2>/dev/null || true && \
+    docker rm otel-files-service 2>/dev/null || true && \
+    docker run -d -p 80:80 --name otel-files-service otel-files-service'
 
 elif [ "$action" == "get-ip" ]; then
   service=$2
