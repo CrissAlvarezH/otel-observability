@@ -46,6 +46,7 @@ def complete_upload_route(
     return {"message": "Upload completed"}
 
 @app.get("/upload/list-multipart-uploads")
-def list_multipart_uploads_route(filename: str = Query()):
-    uploads = list_multipart_uploads(filename)
+def list_multipart_uploads_route():
+    uploads = list_multipart_uploads()
     return {"uploads": uploads}
+

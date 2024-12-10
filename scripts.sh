@@ -84,7 +84,7 @@ elif [ "$action" == "deploy" ]; then
 
   log "Deploy finished"
   log "Frontend: http://$frontend_ip"
-  log "Files service: http://$files_service_ip"
+  log "Files service: http://$files_service_ip/docs"
 
 elif [ "$action" == "get-ip" ]; then
   service=$2

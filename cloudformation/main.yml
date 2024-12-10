@@ -110,14 +110,14 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
-                  - s3:CreateMultipartUpload
                   - s3:AbortMultipartUpload
-                  - s3:UploadPart
                   - s3:ListMultipartUploadParts
-                  - s3:CompleteMultipartUpload
+                  - s3:ListBucketMultipartUploads
                   - s3:PutObject
                   - s3:GetObject
-                Resource: !Sub arn:aws:s3:::${Bucket}/*
+                Resource:
+                  - !Sub arn:aws:s3:::${Bucket}/*
+                  - !Sub arn:aws:s3:::${Bucket}
 
   Bucket:
     Type: AWS::S3::Bucket
@@ -129,7 +129,6 @@ Resources:
             AllowedMethods: [PUT]
             AllowedOrigins: [!Sub 'http://${FrontendInstance.PublicIp}']
             ExposedHeaders: [ETag]
-            MaxAge: 3000
 
 Outputs:
   FrontendInstancePublicIp:

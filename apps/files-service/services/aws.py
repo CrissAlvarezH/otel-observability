@@ -33,7 +33,7 @@ def get_presigned_url(filename: str, upload_id: str, part_number: int) -> str:
             'UploadId': upload_id,
             'PartNumber': part_number,
         },
-        ExpiresIn=3600
+        ExpiresIn=3600  # 1 hour
     )
 
 
@@ -48,7 +48,7 @@ def complete_upload(filename: str, upload_id: str, parts: list[FilePart]):
     )
 
 
-def list_multipart_uploads(filename: str) -> list[str]:
+def list_multipart_uploads() -> list[str]:
     s3 = boto3.client('s3', region_name='us-east-1')
 
-    return s3.list_multipart_uploads(Bucket=BUCKET_NAME, Prefix=filename)
+    return s3.list_multipart_uploads(Bucket=BUCKET_NAME)
