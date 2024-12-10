@@ -1,4 +1,6 @@
-from fastapi import FastAPI, Body, Query
+from typing import List
+
+from fastapi import FastAPI, Body
 from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -21,7 +23,7 @@ app.add_middleware(
 
 
 @app.post("/upload/init")
-def init_upload_route(filename: str = Body()):
+def init_upload_route(filename: str = Body(embed=True)):
     upload_id = init_upload(filename)
     return {"upload_id": upload_id}
 
@@ -40,13 +42,12 @@ def get_presigned_url_route(
 def complete_upload_route(
     filename: str = Body(),
     upload_id: str = Body(),
-    parts: list[FilePart] = Body(),
+    parts: List[FilePart] = Body(),
 ):
     complete_upload(filename, upload_id, parts)
     return {"message": "Upload completed"}
 
+
 @app.get("/upload/list-multipart-uploads")
 def list_multipart_uploads_route():
-    uploads = list_multipart_uploads()
-    return {"uploads": uploads}
-
+    return list_multipart_uploads()

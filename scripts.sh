@@ -54,7 +54,7 @@ elif [ "$action" == "deploy" ]; then
       cd otel-observability; \
     else \
       cd otel-observability && \
-      git pull; \
+      git pull --rebase; \
     fi && \
     cd apps/frontend && \
     echo 'VITE_API_DOMAIN=http://$files_service_ip' > .env && \
@@ -73,7 +73,7 @@ elif [ "$action" == "deploy" ]; then
       cd otel-observability; \
     else \
       cd otel-observability && \
-      git pull; \
+      git pull --rebase; \
     fi && \
     cd apps/files-service && \
     echo "S3_BUCKET_NAME=otel-files-service" > .env && \

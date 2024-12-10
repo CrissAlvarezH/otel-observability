@@ -1,3 +1,4 @@
+from typing import List
 import boto3
 import os
 
@@ -18,7 +19,6 @@ def init_upload(filename: str) -> str:
         Bucket=BUCKET_NAME,
         Key=filename
     )
-
     return response['UploadId']
 
 
@@ -37,14 +37,14 @@ def get_presigned_url(filename: str, upload_id: str, part_number: int) -> str:
     )
 
 
-def complete_upload(filename: str, upload_id: str, parts: list[FilePart]):
+def complete_upload(filename: str, upload_id: str, parts: List[FilePart]):
     s3 = boto3.client('s3', region_name='us-east-1')
 
     s3.complete_multipart_upload(
         Bucket=BUCKET_NAME,
         Key=filename,
         UploadId=upload_id,
-        MultipartUpload={'Parts': parts},
+        MultipartUpload={'Parts': [part.model_dump() for part in parts]},
     )
 
 
