@@ -35,8 +35,8 @@ export async function uploadFileByParts(file, { batchSize, partSize = DEFAULT_PA
         method: "POST",
         body: JSON.stringify({
           filename: file.name,
-          uploadId,
-          partNumber,
+          upload_id:uploadId,
+          part_number: partNumber,
         }),
       });
       if (!presignedRes.ok) {
@@ -73,7 +73,7 @@ export async function uploadFileByParts(file, { batchSize, partSize = DEFAULT_PA
     method: "POST",
     body: JSON.stringify({
       filename: file.name,
-      uploadId,
+      upload_id:uploadId,
       // parts must be sorted by part number
       parts: partResults.sort((a, b) => a.PartNumber - b.PartNumber),
     }),
