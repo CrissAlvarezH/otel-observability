@@ -126,8 +126,11 @@ Resources:
                 Action:
                   - dynamodb:GetItem
                   - dynamodb:PutItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:Query
                 Resource:
                   - !GetAtt DynamoDatabase.Arn
+                  - !Join [ "/", [ !GetAtt DynamoDatabase.Arn, "*" ] ]
 
   Bucket:
     Type: AWS::S3::Bucket

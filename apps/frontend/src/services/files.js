@@ -22,7 +22,7 @@ export async function uploadFileByParts(file, { batchSize, partSize = DEFAULT_PA
   if (!initRes.ok) {
     throw new Error("Failed to initialize multipart upload");
   }
-  const { upload_id: uploadId } = await initRes.json();
+  const { upload_id: uploadId, file_id: fileId } = await initRes.json();
 
   const uploadPartJobs = [];
   const partSizeInMB = partSize * 1024 * 1024;
@@ -76,6 +76,7 @@ export async function uploadFileByParts(file, { batchSize, partSize = DEFAULT_PA
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
+      file_id: fileId,
       filename: file.name,
       upload_id: uploadId,
       // parts must be sorted by part number

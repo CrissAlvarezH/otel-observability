@@ -14,7 +14,7 @@ class InsertFile(BaseModel):
 
 
 class UpdateFile(BaseModel):
-    status: str = Field(default='pending', description='pending, stored, loaded')
+    status: str = Field(default='pending', description='pending, stored, loaded, failed')
 
 
 class File(BaseModel):

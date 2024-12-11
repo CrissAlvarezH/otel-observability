@@ -57,7 +57,15 @@ def complete_upload_route(
     upload_id: str = Body(),
     parts: List[FilePart] = Body(),
 ):
-    complete_upload(filename, upload_id, parts)
+    try:
+        complete_upload(filename, upload_id, parts)
+    except Exception as e:
+        print(e)
+        update_file(file_id, UpdateFile(
+            status="failed",
+        ))
+        return {"message": "Upload failed"}
+
     update_file(file_id, UpdateFile(
         status="stored",
     ))
