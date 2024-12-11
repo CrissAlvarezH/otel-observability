@@ -16,6 +16,7 @@ export async function uploadFileByParts(file, { batchSize, partSize = DEFAULT_PA
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       filename: file.name,
+      file_size: file.size,
     }),
   });
   if (!initRes.ok) {
@@ -85,4 +86,12 @@ export async function uploadFileByParts(file, { batchSize, partSize = DEFAULT_PA
     throw new Error("Failed to complete multipart upload");
   }
   onProgress?.(100);
+}
+
+export async function fetchUploadedFiles() {
+  const res = await fetch(`${API_DOMAIN}/files`);
+  if (!res.ok) {
+    throw new Error("Failed to fetch uploaded files");
+  }
+  return res.json();
 }

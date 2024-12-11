@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { uploadFileByParts } from './services/files';
+import { useState, useEffect } from 'react'
+import { uploadFileByParts, fetchUploadedFiles } from './services/files';
 import { formatFileSize } from './lib/files';
 import { FilePickerButton } from './components/file-picker-btn';
 import { BackspaceIcon, CloudDone, Spinner, UploadIcon } from './components/icons';
@@ -65,13 +65,15 @@ export default function App() {
               onSelectFile={handleSelectFile}
             />
 
-            {files.length === 0 && (
-              <p className="text-gray-500 py-10 text-center">No files selected</p>
-            )}
+            <h1 className="text-xl font-bold pt-2">Files to upload</h1>
 
-            <div className="flex flex-col gap-4 pt-4">
+            <div className="flex flex-col gap-2 pt-3 pb-4 min-h-20 justify-center">
+              {files.length === 0 && (
+                <p className="text-gray-500 text-center">No files selected</p>
+              )}
+
               {files.map((file) => (
-                <UploadFileItem
+                <FileToUpload
                   key={file.file.name}
                   file={file}
                   uploadConfig={{ batchSize: uploadBatchSize, partSize: uploadPartSize }}
@@ -82,6 +84,8 @@ export default function App() {
               ))}
             </div>
 
+            <UploadedFiles />
+
           </div>
 
         </div>
@@ -90,8 +94,45 @@ export default function App() {
   );
 }
 
+function UploadedFiles() {
+  const [uploadedFiles, setUploadedFiles] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-function UploadFileItem({ file, uploadConfig, onRemove, onUploadSuccess, onUploadError }) {
+  useEffect(() => {
+    setIsLoading(true);
+    fetchUploadedFiles()
+      .then(res => setUploadedFiles(res.result))
+      .finally(() => setIsLoading(false));
+  }, []);
+
+  return (
+    <div>
+      <div className="flex items-center gap-2 pb-2">
+        <h1 className="text-xl font-bold">Uploaded Files</h1>
+        {isLoading && (
+          <Spinner className="fill-blue-600 w-5 h-5" />
+        )}
+      </div>
+
+      <div className="flex flex-col gap-2">
+        {uploadedFiles.map((file) => (
+          <div key={file.id} className="bg-white shadow-md rounded-lg py-4 px-6 border flex items-start justify-between gap-10">
+            <div>
+              <p className="font-medium text-gray-800 truncate">{file.filename}</p>
+              <div className="flex gap-2">
+                <p className="text-gray-500 text-sm">{formatFileSize(file.file_size)}</p>
+                <p className="font-light text-sm">{file.creation_datetime}</p>
+              </div>
+            </div>
+            <p className="self-start text-gray-500 text-xs capitalize">{file.status}</p>
+          </div>
+        ))}
+      </div>
+    </div >
+  )
+}
+
+function FileToUpload({ file, uploadConfig, onRemove, onUploadSuccess, onUploadError }) {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
