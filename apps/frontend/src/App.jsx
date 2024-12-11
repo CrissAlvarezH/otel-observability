@@ -7,6 +7,7 @@ import { BackspaceIcon, CloudDone, Spinner, UploadIcon } from './components/icon
 
 export default function App() {
   const [files, setFiles] = useState([]);
+  const [refreshUploads, setRefreshUploads] = useState(false);
   const [uploadBatchSize, setUploadBatchSize] = useState();
   const [uploadPartSize, setUploadPartSize] = useState();
 
@@ -20,10 +21,12 @@ export default function App() {
 
   const handleUploadSuccess = (file) => {
     setFiles(files.map(f => f.file.name !== file.file.name ? f : { ...f, isUploaded: true }));
+    setRefreshUploads(prev => !prev);
   };
 
   const handleUploadError = (file, error) => {
     setFiles(files.map(f => f.file.name !== file.file.name ? f : { ...f, uploadError: error }));
+    setRefreshUploads(prev => !prev);
   };
 
   return (
@@ -84,7 +87,7 @@ export default function App() {
               ))}
             </div>
 
-            <UploadedFiles />
+            <UploadedFiles refreshUploads={refreshUploads} />
 
           </div>
 
@@ -94,7 +97,7 @@ export default function App() {
   );
 }
 
-function UploadedFiles() {
+function UploadedFiles({ refreshUploads }) {
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -105,7 +108,7 @@ function UploadedFiles() {
       .then(res => setUploadedFiles(res.result))
       .catch(setError)
       .finally(() => setIsLoading(false));
-  }, []);
+  }, [refreshUploads]);
 
   return (
     <div>
