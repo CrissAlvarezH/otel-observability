@@ -4,6 +4,8 @@ import os
 
 from pydantic import BaseModel
 
+from config import AWS_REGION
+
 BUCKET_NAME = os.getenv('S3_BUCKET_NAME')
 
 
@@ -13,7 +15,7 @@ class FilePart(BaseModel):
 
 
 def init_upload(filename: str) -> str:
-    s3 = boto3.client('s3', region_name='us-east-1')
+    s3 = boto3.client('s3', region_name=AWS_REGION)
 
     response = s3.create_multipart_upload(
         Bucket=BUCKET_NAME,
@@ -23,7 +25,7 @@ def init_upload(filename: str) -> str:
 
 
 def get_presigned_url(filename: str, upload_id: str, part_number: int) -> str:
-    s3 = boto3.client('s3', region_name='us-east-1')
+    s3 = boto3.client('s3', region_name=AWS_REGION)
 
     return s3.generate_presigned_url(
         'upload_part',
@@ -38,7 +40,7 @@ def get_presigned_url(filename: str, upload_id: str, part_number: int) -> str:
 
 
 def complete_upload(filename: str, upload_id: str, parts: List[FilePart]):
-    s3 = boto3.client('s3', region_name='us-east-1')
+    s3 = boto3.client('s3', region_name=AWS_REGION)
 
     s3.complete_multipart_upload(
         Bucket=BUCKET_NAME,
@@ -49,6 +51,7 @@ def complete_upload(filename: str, upload_id: str, parts: List[FilePart]):
 
 
 def list_multipart_uploads() -> list[str]:
-    s3 = boto3.client('s3', region_name='us-east-1')
+    s3 = boto3.client('s3', region_name=AWS_REGION)
 
     return s3.list_multipart_uploads(Bucket=BUCKET_NAME)
+

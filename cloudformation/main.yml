@@ -126,7 +126,8 @@ Resources:
                 Action:
                   - dynamodb:GetItem
                   - dynamodb:PutItem
-                Resource: !Ref DynamoDatabase
+                Resource:
+                  - !GetAtt DynamoDatabase.Arn
 
   Bucket:
     Type: AWS::S3::Bucket

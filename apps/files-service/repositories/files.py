@@ -5,6 +5,7 @@ from ulid import ULID
 from pydantic import BaseModel, Field
 from boto3.dynamodb.conditions import Key
 
+from config import AWS_REGION
 
 class InsertFile(BaseModel):
     filename: str
@@ -25,7 +26,7 @@ class File(BaseModel):
 
 
 def get_files(page_size: int = 10, last_id: str = None):
-    dynamodb = boto3.resource('dynamodb')
+    dynamodb = boto3.resource('dynamodb', region_name=AWS_REGION)
     table = dynamodb.Table('otel-observability-files')
     
     query_params = {
@@ -48,7 +49,7 @@ def get_files(page_size: int = 10, last_id: str = None):
 
 
 def insert_file(file: InsertFile) -> str:
-    db = boto3.client('dynamodb')
+    db = boto3.client('dynamodb', region_name=AWS_REGION)
     id = str(ULID())
     res = db.put_item(
         TableName='otel-observability-files',
@@ -69,7 +70,7 @@ def insert_file(file: InsertFile) -> str:
 
 
 def update_file(id: str, file: UpdateFile):
-    db = boto3.client('dynamodb')
+    db = boto3.client('dynamodb', region_name=AWS_REGION)
     res = db.update_item(
         TableName='otel-observability-files',
         Key={'id': {'S': id}},
@@ -82,8 +83,8 @@ def update_file(id: str, file: UpdateFile):
         raise Exception("Failed to update file")
 
 
-def delete_file(id: str, creation_datetime: str):
-    db = boto3.client('dynamodb')
+def delete_file(id: str):
+    db = boto3.client('dynamodb', region_name=AWS_REGION)
     return db.delete_item(
         TableName='otel-observability-files',
         Key={'id': {'S': id}},
