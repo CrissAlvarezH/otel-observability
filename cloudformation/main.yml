@@ -118,6 +118,15 @@ Resources:
                 Resource:
                   - !Sub arn:aws:s3:::${Bucket}/*
                   - !Sub arn:aws:s3:::${Bucket}
+        - PolicyName: DynamoDBAccessPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                Resource: !Ref DynamoDatabase
 
   Bucket:
     Type: AWS::S3::Bucket

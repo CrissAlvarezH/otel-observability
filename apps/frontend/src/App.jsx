@@ -97,11 +97,13 @@ export default function App() {
 function UploadedFiles() {
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     setIsLoading(true);
     fetchUploadedFiles()
       .then(res => setUploadedFiles(res.result))
+      .catch(setError)
       .finally(() => setIsLoading(false));
   }, []);
 
@@ -115,18 +117,30 @@ function UploadedFiles() {
       </div>
 
       <div className="flex flex-col gap-2">
-        {uploadedFiles.map((file) => (
-          <div key={file.id} className="bg-white shadow-md rounded-lg py-4 px-6 border flex items-start justify-between gap-10">
-            <div>
-              <p className="font-medium text-gray-800 truncate">{file.filename}</p>
-              <div className="flex gap-2">
-                <p className="text-gray-500 text-sm">{formatFileSize(file.file_size)}</p>
-                <p className="font-light text-sm">{file.creation_datetime}</p>
+
+        {error ? (
+          <p className="text-red-500 text-center">Error: {error.message}</p>
+        ) : (
+          <>
+            {!isLoading && uploadedFiles.length === 0 && (
+              <p className="text-gray-500 text-center">No files uploaded</p>
+            )}
+
+            {uploadedFiles.map((file) => (
+              <div key={file.id} className="bg-white shadow-md rounded-lg py-4 px-6 border flex items-start justify-between gap-10">
+                <div>
+                  <p className="font-medium text-gray-800 truncate">{file.filename}</p>
+                  <div className="flex gap-2">
+                    <p className="text-gray-500 text-sm">{formatFileSize(file.file_size)}</p>
+                    <p className="font-light text-sm">{file.creation_datetime}</p>
+                  </div>
+                </div>
+
+                <p className="self-start text-gray-500 text-xs capitalize">{file.status}</p>
               </div>
-            </div>
-            <p className="self-start text-gray-500 text-xs capitalize">{file.status}</p>
-          </div>
-        ))}
+            ))}
+          </>
+        )}
       </div>
     </div >
   )
