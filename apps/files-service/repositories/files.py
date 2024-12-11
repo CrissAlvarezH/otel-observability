@@ -47,12 +47,13 @@ def get_files(page_size: int = 10, last_id: str = None):
     }
 
 
-def insert_file(file: InsertFile):
+def insert_file(file: InsertFile) -> str:
     db = boto3.client('dynamodb')
-    return db.put_item(
+    id = str(ULID())
+    res = db.put_item(
         TableName='otel-observability-files',
         Item={
-            "id": {"S": str(ULID())},
+            "id": {"S": id},
             "filename": {"S": file.filename},
             "file_size": {"N": str(file.file_size)},
             "status": {"S": file.status},
@@ -62,10 +63,14 @@ def insert_file(file: InsertFile):
             "creation_datetime": {"S": datetime.now().strftime("%Y-%m-%d %H:%M:%S")},
         }
     )
+    if res.get('ResponseMetadata', {}).get('HTTPStatusCode') != 200:
+        raise Exception("Failed to insert file")
+    return id
+
 
 def update_file(id: str, file: UpdateFile):
     db = boto3.client('dynamodb')
-    return db.update_item(
+    res = db.update_item(
         TableName='otel-observability-files',
         Key={'id': {'S': id}},
         # #st is a placeholder for status because status is a reserved word
@@ -73,6 +78,9 @@ def update_file(id: str, file: UpdateFile):
         ExpressionAttributeNames={'#st': 'status'},
         ExpressionAttributeValues={':status': {'S': file.status}},
     )
+    if res.get('ResponseMetadata', {}).get('HTTPStatusCode') != 200:
+        raise Exception("Failed to update file")
+
 
 def delete_file(id: str, creation_datetime: str):
     db = boto3.client('dynamodb')

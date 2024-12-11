@@ -28,9 +28,16 @@ app.add_middleware(
 
 
 @app.post("/upload/init")
-def init_upload_route(filename: str = Body(embed=True)):
+def init_upload_route(
+    filename: str = Body(),
+    file_size: int = Body(),
+):
     upload_id = init_upload(filename)
-    return {"upload_id": upload_id}
+    file_id = insert_file(InsertFile(
+        filename=filename,
+        file_size=file_size,
+    ))
+    return {"upload_id": upload_id, "file_id": file_id}
 
 
 @app.post("/upload/get-presigned-url")
@@ -45,11 +52,15 @@ def get_presigned_url_route(
 
 @app.post("/upload/complete")
 def complete_upload_route(
+    file_id: str = Body(),
     filename: str = Body(),
     upload_id: str = Body(),
     parts: List[FilePart] = Body(),
 ):
     complete_upload(filename, upload_id, parts)
+    update_file(file_id, UpdateFile(
+        status="stored",
+    ))
     return {"message": "Upload completed"}
 
 
