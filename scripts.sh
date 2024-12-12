@@ -17,6 +17,10 @@ function log() {
 action=$1
 
 if [ "$action" == "setup" ]; then
+  if [ -f "otel-observability.pem" ]; then
+    log "Deleting current key pair"
+    rm -rf otel-observability.pem
+  fi
 
   log "Creating key pairs to access instances"
 
@@ -36,7 +40,7 @@ if [ "$action" == "setup" ]; then
 
   aws cloudformation create-stack \
     --stack-name otel-observability \
-    --template-body file://cloudformation/main.yml \
+    --template-body file://cloudformation.yml \
     --capabilities CAPABILITY_NAMED_IAM \
     | cat
 
@@ -123,6 +127,10 @@ elif [ "$action" == "connect" ]; then
     -i "./otel-observability.pem" "ec2-user@$ip"
 
 elif [ "$action" == "destroy" ]; then
+  log "Emptying otel-files-service s3 bucket"
+
+  aws s3 rm s3://otel-files-service --recursive
+
   log "Destroying cloudformation stack"
 
   aws cloudformation delete-stack --stack-name otel-observability
