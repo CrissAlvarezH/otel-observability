@@ -130,8 +130,81 @@ Resources:
                   - dynamodb:DeleteItem
                   - dynamodb:Query
                 Resource:
-                  - !GetAtt DynamoDatabase.Arn
-                  - !Join [ "/", [ !GetAtt DynamoDatabase.Arn, "*" ] ]
+                  - !GetAtt DynamoFilesTable.Arn
+                  - !Join [ "/", [ !GetAtt DynamoFilesTable.Arn, "*" ] ]
+
+  AuthServiceInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-03972092c42e8c0ca  # Amazon Linux 2 AMI 64-bit (x86)
+      AvailabilityZone: us-east-1a
+      InstanceType: t3.micro
+      KeyName: otel-observability
+      Tags:
+        - Key: Name
+          Value: otel-auth-service
+      SecurityGroups:
+        - !Ref AuthServiceInstanceSecurityGroup
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          sudo yum update -y
+          sudo yum install -y docker
+          sudo service docker start
+          sudo usermod -a -G docker ec2-user
+          docker --version
+          sudo yum install -y git
+
+  AuthServiceInstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      Tags:
+        - Key: App
+          Value: otel-auth-service
+        - Key: Name
+          Value: otel-auth-service-sg
+      GroupDescription: "otel-auth-service security group"
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+
+  AuthServiceInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref AuthServiceInstanceRole
+
+  AuthServiceInstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: DynamoDBAccessPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:Scan
+                Resource:
+                  - !GetAtt DynamoAuthTable.Arn
+                  - !Join [ "/", [ !GetAtt DynamoAuthTable.Arn, "*" ] ]
 
   Bucket:
     Type: AWS::S3::Bucket
@@ -144,7 +217,22 @@ Resources:
             AllowedOrigins: [!Sub 'http://${FrontendInstance.PublicIp}']
             ExposedHeaders: [ETag]
 
-  DynamoDatabase:
+  DynamoAuthTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: otel-observability-auth
+      AttributeDefinitions:
+        - AttributeName: username
+          AttributeType: S
+      KeySchema:
+        - AttributeName: username
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+      Tags:
+        - Key: Name
+          Value: otel-observability-auth
+
+  DynamoFilesTable:
     Type: AWS::DynamoDB::Table
     Properties:
       TableName: otel-observability-files
@@ -171,7 +259,7 @@ Resources:
       BillingMode: PAY_PER_REQUEST
       Tags:
         - Key: Name
-          Value: otel-observability
+          Value: otel-observability-files
 
 Outputs:
   FrontendInstancePublicIp:
@@ -181,3 +269,7 @@ Outputs:
   FilesServiceInstancePublicIp:
     Description: Public IP of the files service instance
     Value: !GetAtt FilesServiceInstance.PublicIp
+
+  AuthServiceInstancePublicIp:
+    Description: Public IP of the auth service instance
+    Value: !GetAtt AuthServiceInstance.PublicIp

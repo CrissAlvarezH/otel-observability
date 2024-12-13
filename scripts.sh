@@ -17,11 +17,6 @@ function log() {
 action=$1
 
 if [ "$action" == "setup" ]; then
-  if [ -f "otel-observability.pem" ]; then
-    log "Deleting current key pair"
-    rm -rf otel-observability.pem
-  fi
-
   log "Creating key pairs to access instances"
 
   aws ec2 create-key-pair \
@@ -49,6 +44,7 @@ elif [ "$action" == "deploy" ]; then
 
   frontend_ip=$(sh scripts.sh get-ip frontend)
   files_service_ip=$(sh scripts.sh get-ip files-service)
+  auth_service_ip=$(sh scripts.sh get-ip auth-service)
 
   ssh -o StrictHostKeyChecking=no \
     -i "./otel-observability.pem" ec2-user@"$frontend_ip" \
@@ -81,14 +77,34 @@ elif [ "$action" == "deploy" ]; then
     fi && \
     cd apps/files-service && \
     echo "S3_BUCKET_NAME=otel-files-service" > .env && \
+    echo 'AUTH_DOMAIN=http://$auth_service_ip' > .env && \
     docker build -t otel-files-service . && \
     docker stop otel-files-service 2>/dev/null || true && \
     docker rm otel-files-service 2>/dev/null || true && \
     docker run -d -p 80:80 --name otel-files-service otel-files-service'
 
+  log "Connecting to auth service instance"
+
+  ssh -o StrictHostKeyChecking=no \
+    -i "./otel-observability.pem" ec2-user@"$auth_service_ip" \
+    'cd /home/ec2-user/ && \
+    if [ ! -d "otel-observability" ]; then \
+      git clone https://github.com/CrissAlvarezH/otel-observability.git && \
+      cd otel-observability; \
+    else \
+      cd otel-observability && \
+      git pull --rebase; \
+    fi && \
+    cd apps/auth-service && \
+    docker build -t otel-auth-service . && \
+    docker stop otel-auth-service 2>/dev/null || true && \
+    docker rm otel-auth-service 2>/dev/null || true && \
+    docker run -d -p 80:80 --name otel-auth-service otel-auth-service'
+
   log "Deploy finished"
   log "Frontend: http://$frontend_ip"
   log "Files service: http://$files_service_ip/docs"
+  log "Auth service: http://$auth_service_ip/docs"
 
 elif [ "$action" == "get-ip" ]; then
   service=$2
@@ -98,6 +114,8 @@ elif [ "$action" == "get-ip" ]; then
     output_key="FrontendInstancePublicIp"
   elif [ "$service" == "files-service" ]; then
     output_key="FilesServiceInstancePublicIp"
+  elif [ "$service" == "auth-service" ]; then
+    output_key="AuthServiceInstancePublicIp"
   else
     log "Invalid service" "error"
   fi
