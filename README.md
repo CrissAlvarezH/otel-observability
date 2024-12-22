@@ -19,3 +19,46 @@ Y cuenta con los siguientes componentes en su arquitectura (orientada a aws)
 # Proceso
 
 <img src="https://github.com/CrissAlvarezH/otel-observability/blob/main/docs/images/entire_process_diagram.png"/>
+
+
+# Correr el proyecto
+
+### 1. Configrar aws cli
+
+Instalar aws [cli](https://aws.amazon.com/es/cli/) en la maquina cliente y configurar las credenciales de acceso a aws con los permisos necesarios para crear los recursos de la infraestructura.
+
+### 2. Crear el stack de infraestructura
+
+```bash
+sh scripts.sh setup
+```
+
+El anterior comando creará los recursos necesarios en aws para el proyecto, el nombre del stack es `otel-observability`.
+
+### 3. Desplegar los servicios y aplicaciones
+```bash
+sh scripts.sh deploy
+```
+El anterior comando se conectará a las instancias EC2 creadas en el paso anterior y desplegará las aplicaciones de `frontend`, `files service` y `auth service` construyendo imagenes docker pada cada una en sus respectivas instancias.
+Una vez terminado el deploy verás en la console las urls de acceso a cada una de las aplicaciones.
+Ejemplo:
+
+```bash
+Frontend: http://34.0.10.10/
+Files Service: http://34.0.10.10/docs
+Auth Service: http://34.0.10.10/docs
+```
+
+## Comandos de utilidad
+
+2. `sh scripts.sh destroy`: Destruye el stack de infraestructura
+1. `sh scripts.sh get-ip <service>`: Obtiene la ip publica de una instancia EC2
+3. `sh scripts.sh output`: Obtiene los outputs del stack de infraestructura (guardados en *outputs.json*)
+4. `sh scripts.sh connect <service>`: Conecta a una instancia EC2 y le permite ejecutar comandos
+
+> Valores validos para `<service>`: `frontend`, `files-service`, `auth-service`
+
+
+
+
+
