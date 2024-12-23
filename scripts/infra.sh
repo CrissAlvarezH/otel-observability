@@ -25,7 +25,7 @@ function setup() {
   aws cloudformation create-stack \
     --stack-name otel-observability \
     --template-body file://cloudformation.yml \
-    --capabilities CAPABILITY_NAMED_IAM \
+    --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND \
     | cat
 }
 
@@ -78,6 +78,11 @@ function connect() {
 }
 
 function destroy() {
+  log "Deleting key pair"
+
+  aws ec2 delete-key-pair --key-name otel-observability
+  rm -f otel-observability.pem
+
   log "Emptying otel-files-service s3 bucket"
 
   aws s3 rm s3://otel-files-service --recursive
@@ -85,10 +90,6 @@ function destroy() {
   log "Destroying cloudformation stack"
 
   aws cloudformation delete-stack --stack-name otel-observability
-
-  log "Deleting key pair"
-
-  aws ec2 delete-key-pair --key-name otel-observability
 
   log "Cleaning up"
 

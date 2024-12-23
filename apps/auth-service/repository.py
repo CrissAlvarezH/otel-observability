@@ -24,6 +24,5 @@ def scan_tokens():
 def get_token(username: str):
     dynamodb = boto3.resource('dynamodb', region_name=AWS_REGION)
     table = dynamodb.Table(AUTH_TABLE)
-    return table.get_item(Key={
-        'username': username,
-    })
+    res = table.get_item(Key={'username': username})
+    return res.get('Item', None)

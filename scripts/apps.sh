@@ -12,59 +12,68 @@ function deploy() {
   log "Connecting to frontend instance"
 
   ssh -o StrictHostKeyChecking=no \
-    -i "./otel-observability.pem" ec2-user@"$frontend_ip" \
-    "cd /home/ec2-user/ && \
-    if [ ! -d 'otel-observability' ]; then \
-      git clone https://github.com/CrissAlvarezH/otel-observability.git && \
-      cd otel-observability; \
-    else \
-      cd otel-observability && \
-      git pull --rebase; \
-    fi && \
-    cd apps/frontend && \
-    echo 'VITE_API_DOMAIN=http://$files_service_ip' >> .env && \
-    docker build -t otel-frontend . && \
-    docker stop otel-frontend 2>/dev/null || true && \
-    docker rm otel-frontend 2>/dev/null || true && \
-    docker run -d -p 80:80 --name otel-frontend otel-frontend"
+    -i "./otel-observability.pem" ec2-user@"$frontend_ip" << EOF
+    cd /home/ec2-user/ 
+
+    if [ ! -d 'otel-observability' ]; then 
+      git clone https://github.com/CrissAlvarezH/otel-observability.git
+      cd otel-observability
+    else 
+      cd otel-observability
+      git pull --rebase
+    fi
+
+    cd apps/frontend
+    echo 'VITE_API_DOMAIN=http://$files_service_ip' >> .env
+    docker build -t otel-frontend .
+    docker stop otel-frontend 2>/dev/null || true
+    docker rm otel-frontend 2>/dev/null || true
+    docker run -d -p 80:80 --name otel-frontend otel-frontend
+EOF
 
   log "Connecting to files service instance"
 
   ssh -o StrictHostKeyChecking=no \
-    -i "./otel-observability.pem" ec2-user@"$files_service_ip" \
-    'cd /home/ec2-user/ && \
-    if [ ! -d "otel-observability" ]; then \
-      git clone https://github.com/CrissAlvarezH/otel-observability.git && \
-      cd otel-observability; \
-    else \
-      cd otel-observability && \
-      git pull --rebase; \
-    fi && \
-    cd apps/files-service && \
-    echo "S3_BUCKET_NAME=otel-files-service" >> .env && \
-    echo 'AUTH_DOMAIN=http://$auth_service_ip' >> .env && \
-    docker build -t otel-files-service . && \
-    docker stop otel-files-service 2>/dev/null || true && \
-    docker rm otel-files-service 2>/dev/null || true && \
-    docker run -d -p 80:80 --name otel-files-service otel-files-service'
+    -i "./otel-observability.pem" ec2-user@"$files_service_ip" << EOF
+    cd /home/ec2-user/
+
+    if [ ! -d "otel-observability" ]; then 
+      git clone https://github.com/CrissAlvarezH/otel-observability.git
+      cd otel-observability
+    else 
+      cd otel-observability
+      git pull --rebase
+    fi
+
+    cd apps/files-service
+    echo "S3_BUCKET_NAME=otel-files-service" >> .env
+    echo 'AUTH_DOMAIN=http://$auth_service_ip' >> .env
+    docker build -t otel-files-service .
+    docker stop otel-files-service 2>/dev/null || true
+    docker rm otel-files-service 2>/dev/null || true
+    docker run -d -p 80:80 --name otel-files-service otel-files-service
+EOF
 
   log "Connecting to auth service instance"
 
   ssh -o StrictHostKeyChecking=no \
-    -i "./otel-observability.pem" ec2-user@"$auth_service_ip" \
-    'cd /home/ec2-user/ && \
-    if [ ! -d "otel-observability" ]; then \
-      git clone https://github.com/CrissAlvarezH/otel-observability.git && \
-      cd otel-observability; \
-    else \
-      cd otel-observability && \
-      git pull --rebase; \
-    fi && \
-    cd apps/auth-service && \
-    docker build -t otel-auth-service . && \
-    docker stop otel-auth-service 2>/dev/null || true && \
-    docker rm otel-auth-service 2>/dev/null || true && \
-    docker run -d -p 80:80 --name otel-auth-service otel-auth-service'
+    -i "./otel-observability.pem" ec2-user@"$auth_service_ip" << EOF
+    cd /home/ec2-user/
+
+    if [ ! -d "otel-observability" ]; then 
+      git clone https://github.com/CrissAlvarezH/otel-observability.git
+      cd otel-observability
+    else 
+      cd otel-observability
+      git pull --rebase
+    fi
+
+    cd apps/auth-service
+    docker build -t otel-auth-service .
+    docker stop otel-auth-service 2>/dev/null || true
+    docker rm otel-auth-service 2>/dev/null || true
+    docker run -d -p 80:80 --name otel-auth-service otel-auth-service
+EOF
 
   log "Deploy finished"
   log "Frontend: http://$frontend_ip"
