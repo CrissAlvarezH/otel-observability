@@ -2,7 +2,7 @@ from fastapi import FastAPI, Body, Response
 from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
 
-from repository import add_token, scan_tokens, get_token
+from repository import add_token, scan_tokens, get_token, seed_tokens
 
 load_dotenv()
 
@@ -41,3 +41,7 @@ def get_tokens_route():
     return scan_tokens()
 
 
+@app.post("/seed")
+def seed_tokens_route():
+    seed_tokens()
+    return {"message": "Tokens seeded"}

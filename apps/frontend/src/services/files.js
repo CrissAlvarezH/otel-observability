@@ -43,7 +43,7 @@ export async function uploadFileByParts(file, { batchSize, partSize = DEFAULT_PA
     await Promise.all(batch.map(job => job()));
   }
 
-  await completeUpload(fileId, uploadId, partResults, token);
+  await completeUpload(file.name, fileId, uploadId, partResults, token);
   onProgress?.(100);
 }
 
@@ -100,13 +100,13 @@ async function getPresignedUrl(file, uploadId, partNumber, token) {
   return url;
 }
 
-async function completeUpload(fileId, uploadId, partResults, token) {
+async function completeUpload(fileName, fileId, uploadId, partResults, token) {
   const completeRes = await fetch(`${API_DOMAIN}/upload/complete`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "Token": token },
     body: JSON.stringify({
       file_id: fileId,
-      filename: file.name,
+      filename: fileName,
       upload_id: uploadId,
       // parts must be sorted by part number
       parts: partResults.sort((a, b) => a.PartNumber - b.PartNumber),

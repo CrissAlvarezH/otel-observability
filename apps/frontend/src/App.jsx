@@ -145,15 +145,19 @@ function UploadedFiles({ refreshUploads }) {
 
             {uploadedFiles.map((file) => (
               <div key={file.id} className="bg-white shadow-md rounded-lg py-4 px-6 border flex items-start justify-between gap-10">
-                <div>
-                  <p className="font-medium text-gray-800 truncate">{file.filename}</p>
-                  <div className="flex gap-2">
+                <div className="space-y-0.5">
+                  <div className="flex items-baseline gap-3">
+                    <p className="font-medium text-gray-800 truncate">{file.filename}</p>
+                    <p className="text-xs border border-gray-300 px-2 rounded-md">{file.username}</p>
+                  </div>
+                  <div className="flex gap-1.5 items-baseline">
                     <p className="text-gray-500 text-sm">{formatFileSize(file.file_size)}</p>
+                    <p className="text-gray-400 font-extralight">|</p>
                     <p className="font-light text-sm">{file.creation_datetime}</p>
                   </div>
                 </div>
 
-                <p className="self-start text-gray-500 text-xs capitalize">{file.status}</p>
+                <p className="text-gray-500 text-xs capitalize">{file.status}</p>
               </div>
             ))}
           </>
@@ -245,7 +249,11 @@ function Tokens() {
   const [copiedToken, setCopiedToken] = useState(null);
 
   useEffect(() => {
-    getTokens().then(setTokens);
+    setIsLoading(true);
+    getTokens()
+      .then(setTokens)
+      .catch(setError)
+      .finally(() => setIsLoading(false));
   }, []);
 
   const handleCopyToken = (token) => {
@@ -257,6 +265,7 @@ function Tokens() {
   return (
     <div>
       <h1 className="text-xl font-bold py-2">Tokens</h1>
+
       {isLoading && (
         <div className="flex items-center gap-2">
           <Spinner className="fill-blue-600 w-5 h-5" />
@@ -264,20 +273,21 @@ function Tokens() {
         </div>
       )}
 
+      {error && (
+        <p className="text-red-500 text-center">Error: {error.message}</p>
+      )}
+
       <div className="flex flex-col bg-white rounded">
+        {!isLoading && !error && tokens.length === 0 && (
+          <p className="text-gray-500 py-4 text-center">No tokens found</p>
+        )}
+
         {tokens.map((token) => (
           <div key={token.token} className="border-y px-3 py-2">
             <p className="text-medium font-semibold">{token.username}</p>
 
             <div className="flex items-center justify-between bg-gray-100 rounded-md p-1">
               <p className="text-sm px-1 text-gray-800 font-light font-mono">{token.token}</p>
-              <button onClick={() => handleCopyToken(token.token)} className="hover:bg-gray-200 p-1 rounded-md">
-                {copiedToken === token.token ? (
-                  <DoneIcon className="w-4 h-4" />
-                ) : (
-                  <CopyIcon className="fill-gray-600 w-4 h-4" />
-                )}
-              </button>
             </div>
           </div>
         ))}

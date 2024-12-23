@@ -25,6 +25,7 @@ function deploy() {
 
     cd apps/frontend
     echo 'VITE_API_DOMAIN=http://$files_service_ip' >> .env
+    echo 'VITE_AUTH_DOMAIN=http://$auth_service_ip' >> .env
     docker build -t otel-frontend .
     docker stop otel-frontend 2>/dev/null || true
     docker rm otel-frontend 2>/dev/null || true
@@ -75,7 +76,11 @@ EOF
     docker run -d -p 80:80 --name otel-auth-service otel-auth-service
 EOF
 
-  log "Deploy finished"
+  log "Seeding tokens"
+  sleep 3
+  curl -X POST http://$auth_service_ip/seed
+
+  log "\nDeploy finished"
   log "Frontend: http://$frontend_ip"
   log "Files service: http://$files_service_ip/docs"
   log "Auth service: http://$auth_service_ip/docs"

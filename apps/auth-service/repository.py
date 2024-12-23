@@ -1,4 +1,6 @@
 import boto3
+import uuid
+from faker import Faker
 
 from config import AWS_REGION
 
@@ -26,3 +28,13 @@ def get_token(token: str):
     table = dynamodb.Table(AUTH_TABLE)
     res = table.get_item(Key={'token': token})
     return res.get('Item', None)
+
+
+def seed_tokens():
+    tokens = scan_tokens()
+    if len(tokens) > 0:
+        return
+
+    faker = Faker()
+    for _ in range(4):
+        add_token(faker.user_name(), uuid.uuid4().hex[:20])
