@@ -19,7 +19,7 @@ app.add_middleware(
 
 @app.post("/validate")
 def validate_token(
-    token: str = Body(),
+    token: str = Body(embed=True),
 ):
     token = get_token(token)
     if token:
@@ -30,9 +30,9 @@ def validate_token(
 @app.post("/tokens")
 def add_token_route(
     username: str = Body(),
-    password: str = Body(),
+    token: str = Body(),
 ):
-    token = add_token(username, password)
+    token = add_token(username, token)
     return {"token": token}
 
 

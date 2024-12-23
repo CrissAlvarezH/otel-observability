@@ -33,7 +33,7 @@ function get_stack_status() {
 
   while true; do
     clear
-    log "... Getting stack status <CTRL+C to stop>"
+    log "... Getting stack status <Ctrl+C to stop>"
 
     status=$(aws cloudformation describe-stacks \
       --stack-name otel-observability \

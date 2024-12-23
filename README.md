@@ -23,9 +23,9 @@ Y cuenta con los siguientes componentes en su arquitectura (orientada a aws)
 
 # Correr el proyecto
 
-### 1. Configrar aws cli
+### 1. Configurar aws cli
 
-Instalar aws [cli](https://aws.amazon.com/es/cli/) en la maquina cliente y configurar las credenciales de acceso a aws con los permisos necesarios para crear los recursos de la infraestructura.
+Instalar [aws cli](https://aws.amazon.com/es/cli/) en la maquina cliente y configurar las credenciales de acceso a aws con los permisos necesarios para crear los recursos de la infraestructura.
 
 ### 2. Crear el stack de infraestructura
 
@@ -54,10 +54,11 @@ Auth Service: http://34.0.10.10/docs
 
 ## Comandos de utilidad
 
-2. `make destroy`: Destruye el stack de infraestructura
-1. `make get-ip app=<app>`: Obtiene la ip publica de una instancia EC2
+1. `make destroy`: Destruye el stack de infraestructura
+2. `make get-ip app=<app>`: Obtiene la ip publica de una instancia EC2
 3. `make output`: Obtiene los outputs del stack de infraestructura (guardados en *outputs.json*)
 4. `make connect app=<app>`: Conecta a una instancia EC2 y le permite ejecutar comandos
 5. `make logs app=<app>`: Obtiene los logs de una aplicación
+6. `make status`: Obtiene el estado del stack de infraestructura
 
 > Valores validos para `<app>`: `frontend`, `files-service`, `auth-service`
