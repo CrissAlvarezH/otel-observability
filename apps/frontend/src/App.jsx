@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react'
 import { uploadFileByParts, fetchUploadedFiles } from './services/files';
 import { formatFileSize } from './lib/files';
 import { FilePickerButton } from './components/file-picker-btn';
-import { BackspaceIcon, CloudDone, Spinner, UploadIcon } from './components/icons';
+import { BackspaceIcon, CloudDone, Spinner, UploadIcon, CopyIcon, DoneIcon } from './components/icons';
+import { getTokens } from './services/tokens';
 
 
 export default function App() {
@@ -10,7 +11,7 @@ export default function App() {
   const [refreshUploads, setRefreshUploads] = useState(false);
   const [uploadBatchSize, setUploadBatchSize] = useState();
   const [uploadPartSize, setUploadPartSize] = useState();
-
+  const [token, setToken] = useState();
   const handleSelectFile = (file) => {
     setFiles([...files, { file }]);
   };
@@ -40,6 +41,17 @@ export default function App() {
           <div className="flex-1 bg-gray-100 rounded-lg p-4 space-y-2">
             <h1 className="text-xl font-bold text-gray-800">Configurations</h1>
             <div>
+              <p className="text-sm text-gray-500">Token</p>
+              <input
+                type="text"
+                value={token}
+                placeholder="User token"
+                className="border border-gray-300 rounded-md p-2 w-full"
+                onChange={(e) => setToken(e.target.value)}
+              />
+            </div>
+
+            <div>
               <p className="text-sm text-gray-500">Batch size (simultaneous uploads)</p>
               <input
                 type="number"
@@ -60,6 +72,8 @@ export default function App() {
                 onChange={(e) => setUploadPartSize(e.target.value ? parseInt(e.target.value) : undefined)}
               />
             </div>
+
+            <Tokens />
           </div>
 
           <div className="flex-[2]">
@@ -79,7 +93,7 @@ export default function App() {
                 <FileToUpload
                   key={file.file.name}
                   file={file}
-                  uploadConfig={{ batchSize: uploadBatchSize, partSize: uploadPartSize }}
+                  uploadConfig={{ batchSize: uploadBatchSize, partSize: uploadPartSize, token }}
                   onRemove={() => handleRemoveFile(file)}
                   onUploadSuccess={() => handleUploadSuccess(file)}
                   onUploadError={(error) => handleUploadError(file, error)}
@@ -159,6 +173,7 @@ function FileToUpload({ file, uploadConfig, onRemove, onUploadSuccess, onUploadE
     uploadFileByParts(file.file, {
       batchSize: uploadConfig?.batchSize,
       partSize: uploadConfig?.partSize,
+      token: uploadConfig?.token,
       onProgress: setUploadProgress
     })
       .then(() => {
@@ -217,6 +232,55 @@ function FileToUpload({ file, uploadConfig, onRemove, onUploadSuccess, onUploadE
             </button>
           </>
         )}
+      </div>
+    </div>
+  )
+}
+
+function Tokens() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [tokens, setTokens] = useState([]);
+
+  const [copiedToken, setCopiedToken] = useState(null);
+
+  useEffect(() => {
+    getTokens().then(setTokens);
+  }, []);
+
+  const handleCopyToken = (token) => {
+    navigator.clipboard.writeText(token);
+    setCopiedToken(token);
+    setTimeout(() => setCopiedToken(null), 2000);
+  };
+
+  return (
+    <div>
+      <h1 className="text-xl font-bold py-2">Tokens</h1>
+      {isLoading && (
+        <div className="flex items-center gap-2">
+          <Spinner className="fill-blue-600 w-5 h-5" />
+          <p className="text-sm">Loading tokens...</p>
+        </div>
+      )}
+
+      <div className="flex flex-col bg-white rounded">
+        {tokens.map((token) => (
+          <div key={token.token} className="border-y px-3 py-2">
+            <p className="text-medium font-semibold">{token.username}</p>
+
+            <div className="flex items-center justify-between bg-gray-100 rounded-md p-1">
+              <p className="text-sm px-1 text-gray-800 font-light font-mono">{token.token}</p>
+              <button onClick={() => handleCopyToken(token.token)} className="hover:bg-gray-200 p-1 rounded-md">
+                {copiedToken === token.token ? (
+                  <DoneIcon className="w-4 h-4" />
+                ) : (
+                  <CopyIcon className="fill-gray-600 w-4 h-4" />
+                )}
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   )

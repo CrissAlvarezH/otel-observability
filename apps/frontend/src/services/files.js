@@ -9,21 +9,10 @@ export const DEFAULT_PART_SIZE = 5;
  * @param options.batchSize - The batch size for the upload. Defaults to the number of parts.
  * @param options.partSize - The size of each part to upload. Defaults to 5MB.
  * @param options.onProgress - A callback function that will be called with the progress of the upload.
+ * @param options.token - The token to use for the upload.
  */
-export async function uploadFileByParts(file, { batchSize, partSize = DEFAULT_PART_SIZE, onProgress } = {}) {
-  const initRes = await fetch(`${API_DOMAIN}/upload/init`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      filename: file.name,
-      file_size: file.size,
-    }),
-  });
-  if (!initRes.ok) {
-    throw new Error("Failed to initialize multipart upload");
-  }
-  const { upload_id: uploadId, file_id: fileId } = await initRes.json();
-
+export async function uploadFileByParts(file, { batchSize, partSize = DEFAULT_PART_SIZE, onProgress, token } = {}) {
+  const { uploadId, fileId } = await initUpload(file, token);
   const uploadPartJobs = [];
   const partSizeInMB = partSize * 1024 * 1024;
   const totalParts = Math.ceil(file.size / partSizeInMB);
@@ -33,31 +22,13 @@ export async function uploadFileByParts(file, { batchSize, partSize = DEFAULT_PA
     uploadPartJobs.push(async () => {
       const part = file.slice((partNumber - 1) * partSizeInMB, partNumber * partSizeInMB);
 
-      const presignedRes = await fetch(`${API_DOMAIN}/upload/get-presigned-url`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          filename: file.name,
-          upload_id: uploadId,
-          part_number: partNumber,
-        }),
-      });
-      if (!presignedRes.ok) {
-        throw new Error("Failed to get presigned url");
-      }
-      const { url } = await presignedRes.json();
+      const url = await getPresignedUrl(file, uploadId, partNumber, token);
 
-      const uploadRes = await fetch(url, {
-        method: "PUT",
-        body: part,
-      });
-      if (!uploadRes.ok) {
-        throw new Error("Failed to upload part");
-      }
+      const etag = await uploadPart(url, part);
 
       partResults.push({
         PartNumber: partNumber,
-        ETag: uploadRes.headers.get("Etag"),
+        ETag: etag,
       });
 
       // We don't want to show 100% progress because is missing the call to /complete
@@ -72,9 +43,67 @@ export async function uploadFileByParts(file, { batchSize, partSize = DEFAULT_PA
     await Promise.all(batch.map(job => job()));
   }
 
+  await completeUpload(fileId, uploadId, partResults, token);
+  onProgress?.(100);
+}
+
+async function initUpload(file, token) {
+  const initRes = await fetch(`${API_DOMAIN}/upload/init`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Token": token },
+    body: JSON.stringify({
+      filename: file.name,
+      file_size: file.size,
+    }),
+  });
+  if (!initRes.ok) {
+    if (initRes.status === 401) {
+      throw new Error("Unauthorized");
+    }
+    throw new Error("Failed to initialize multipart upload");
+  }
+  const { upload_id: uploadId, file_id: fileId } = await initRes.json();
+  return { uploadId, fileId };
+}
+
+async function uploadPart(url, part) {
+  const uploadRes = await fetch(url, {
+    method: "PUT",
+    body: part,
+  });
+  if (!uploadRes.ok) {
+    if (uploadRes.status === 401) {
+      throw new Error("Unauthorized");
+    }
+    throw new Error("Failed to upload part");
+  }
+  return uploadRes.headers.get("ETag");
+}
+
+async function getPresignedUrl(file, uploadId, partNumber, token) {
+  const presignedRes = await fetch(`${API_DOMAIN}/upload/get-presigned-url`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Token": token },
+    body: JSON.stringify({
+      filename: file.name,
+      upload_id: uploadId,
+      part_number: partNumber,
+    }),
+  });
+  if (!presignedRes.ok) {
+    if (presignedRes.status === 401) {
+      throw new Error("Unauthorized");
+    }
+    throw new Error("Failed to get presigned url");
+  }
+  const { url } = await presignedRes.json();
+  return url;
+}
+
+async function completeUpload(fileId, uploadId, partResults, token) {
   const completeRes = await fetch(`${API_DOMAIN}/upload/complete`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "Token": token },
     body: JSON.stringify({
       file_id: fileId,
       filename: file.name,
@@ -84,9 +113,11 @@ export async function uploadFileByParts(file, { batchSize, partSize = DEFAULT_PA
     }),
   });
   if (!completeRes.ok) {
+    if (completeRes.status === 401) {
+      throw new Error("Unauthorized");
+    }
     throw new Error("Failed to complete multipart upload");
   }
-  onProgress?.(100);
 }
 
 export async function fetchUploadedFiles() {

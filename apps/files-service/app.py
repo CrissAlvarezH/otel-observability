@@ -3,15 +3,13 @@ from typing import List
 from fastapi import FastAPI, Body, Query, Path, Depends
 from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
+load_dotenv()
 
 from repositories.files import (
     get_files, update_file, insert_file, InsertFile, UpdateFile,
     delete_file,
 )
 from dependencies import get_username, validate_token
-
-load_dotenv()
-
 from services.aws import (
     init_upload, FilePart, complete_upload, get_presigned_url,
     list_multipart_uploads,
