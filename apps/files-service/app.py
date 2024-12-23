@@ -1,6 +1,6 @@
 from typing import List
 
-from fastapi import FastAPI, Body, Query, Path
+from fastapi import FastAPI, Body, Query, Path, Depends
 from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -8,6 +8,7 @@ from repositories.files import (
     get_files, update_file, insert_file, InsertFile, UpdateFile,
     delete_file,
 )
+from dependencies import get_username, validate_token
 
 load_dotenv()
 
@@ -31,16 +32,18 @@ app.add_middleware(
 def init_upload_route(
     filename: str = Body(),
     file_size: int = Body(),
+    username: str = Depends(get_username),
 ):
     upload_id = init_upload(filename)
     file_id = insert_file(InsertFile(
         filename=filename,
         file_size=file_size,
+        username=username,
     ))
     return {"upload_id": upload_id, "file_id": file_id}
 
 
-@app.post("/upload/get-presigned-url")
+@app.post("/upload/get-presigned-url", dependencies=[Depends(validate_token)])
 def get_presigned_url_route(
     filename: str = Body(),
     upload_id: str = Body(),
@@ -50,7 +53,7 @@ def get_presigned_url_route(
     return {"url": presigned_url}
 
 
-@app.post("/upload/complete")
+@app.post("/upload/complete", dependencies=[Depends(validate_token)])
 def complete_upload_route(
     file_id: str = Body(),
     filename: str = Body(),

@@ -11,6 +11,7 @@ class InsertFile(BaseModel):
     filename: str
     file_size: int
     status: str = Field(default='pending', description='pending, stored, loaded')
+    username: str
 
 
 class UpdateFile(BaseModel):
@@ -58,6 +59,7 @@ def insert_file(file: InsertFile) -> str:
             "filename": {"S": file.filename},
             "file_size": {"N": str(file.file_size)},
             "status": {"S": file.status},
+            "username": {"S": file.username},
             # data_type is an artificial attribute to "hack" dynamodb 
             # because its required add a hash key in GlobalSecondaryIndexes
             "data_type": {"S": "FILE"}, 

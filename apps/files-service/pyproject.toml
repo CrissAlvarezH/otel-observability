@@ -10,6 +10,7 @@ python = "^3.12"
 fastapi = {extras = ["standard"], version = "^0.115.6"}
 boto3 = "^1.35.76"
 python-ulid = "^3.0.0"
+requests = "^2.32.3"
 
 
 [build-system]
