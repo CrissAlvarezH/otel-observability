@@ -140,6 +140,7 @@ Resources:
       AvailabilityZone: us-east-1a
       InstanceType: t3.micro
       KeyName: otel-observability
+      IamInstanceProfile: !Ref AuthServiceInstanceProfile
       Tags:
         - Key: Name
           Value: otel-auth-service

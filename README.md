@@ -30,14 +30,17 @@ Instalar aws [cli](https://aws.amazon.com/es/cli/) en la maquina cliente y confi
 ### 2. Crear el stack de infraestructura
 
 ```bash
-sh scripts.sh setup
+make setup
 ```
 
 El anterior comando creará los recursos necesarios en aws para el proyecto, el nombre del stack es `otel-observability`.
 
+> **Importante:**
+> Es necesario esperar a que el stack se cree completamente antes de continuar con el siguiente paso, para esto se puede ejecutar el comando `make status` que mostrará el estado del stack cada 2 segundos, cuando el estado sea `CREATE_COMPLETE` prosigue con el siguiente paso.
+
 ### 3. Desplegar los servicios y aplicaciones
 ```bash
-sh scripts.sh deploy
+make deploy
 ```
 El anterior comando se conectará a las instancias EC2 creadas en el paso anterior y desplegará las aplicaciones de `frontend`, `files service` y `auth service` construyendo imagenes docker pada cada una en sus respectivas instancias.
 Una vez terminado el deploy verás en la console las urls de acceso a cada una de las aplicaciones.
@@ -51,14 +54,10 @@ Auth Service: http://34.0.10.10/docs
 
 ## Comandos de utilidad
 
-2. `sh scripts.sh destroy`: Destruye el stack de infraestructura
-1. `sh scripts.sh get-ip <service>`: Obtiene la ip publica de una instancia EC2
-3. `sh scripts.sh output`: Obtiene los outputs del stack de infraestructura (guardados en *outputs.json*)
-4. `sh scripts.sh connect <service>`: Conecta a una instancia EC2 y le permite ejecutar comandos
+2. `make destroy`: Destruye el stack de infraestructura
+1. `make get-ip app=<app>`: Obtiene la ip publica de una instancia EC2
+3. `make output`: Obtiene los outputs del stack de infraestructura (guardados en *outputs.json*)
+4. `make connect app=<app>`: Conecta a una instancia EC2 y le permite ejecutar comandos
+5. `make logs app=<app>`: Obtiene los logs de una aplicación
 
-> Valores validos para `<service>`: `frontend`, `files-service`, `auth-service`
-
-
-
-
-
+> Valores validos para `<app>`: `frontend`, `files-service`, `auth-service`
