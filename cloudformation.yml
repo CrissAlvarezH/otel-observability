@@ -223,10 +223,10 @@ Resources:
     Properties:
       TableName: otel-observability-auth
       AttributeDefinitions:
-        - AttributeName: username
+        - AttributeName: token
           AttributeType: S
       KeySchema:
-        - AttributeName: username
+        - AttributeName: token
           KeyType: HASH
       BillingMode: PAY_PER_REQUEST
       Tags:

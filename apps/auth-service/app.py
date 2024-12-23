@@ -21,9 +21,9 @@ app.add_middleware(
 def validate_token(
     token: str = Body(embed=True),
 ):
-    token = get_token(token)
-    if token:
-        return Response(status_code=200)
+    res = get_token(token)
+    if res is not None:
+        return res
     return Response(status_code=401)
 
 
