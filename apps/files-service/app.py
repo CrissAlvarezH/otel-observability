@@ -9,10 +9,10 @@ from repositories.files import (
     get_files, update_file, insert_file, InsertFile, UpdateFile,
     delete_file,
 )
-from dependencies import get_username, validate_token
+from dependencies import get_username, auth
 from services.aws import (
     init_upload, FilePart, complete_upload, get_presigned_url,
-    list_multipart_uploads,
+    list_multipart_uploads, queue_uploaded_file,
 )
 
 app = FastAPI()
@@ -41,7 +41,7 @@ def init_upload_route(
     return {"upload_id": upload_id, "file_id": file_id}
 
 
-@app.post("/upload/get-presigned-url", dependencies=[Depends(validate_token)])
+@app.post("/upload/get-presigned-url", dependencies=[Depends(auth)])
 def get_presigned_url_route(
     filename: str = Body(),
     upload_id: str = Body(),
@@ -51,7 +51,7 @@ def get_presigned_url_route(
     return {"url": presigned_url}
 
 
-@app.post("/upload/complete", dependencies=[Depends(validate_token)])
+@app.post("/upload/complete", dependencies=[Depends(auth)])
 def complete_upload_route(
     file_id: str = Body(),
     filename: str = Body(),
@@ -70,6 +70,7 @@ def complete_upload_route(
     update_file(file_id, UpdateFile(
         status="stored",
     ))
+    queue_uploaded_file(file_id, filename)
     return {"message": "Upload completed"}
 
 

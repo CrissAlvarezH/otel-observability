@@ -68,6 +68,15 @@ function get_ip() {
   echo $ip
 }
 
+function get_queue_url() {
+  queue_url=$(aws cloudformation describe-stacks \
+    --stack-name otel-observability \
+    --query "Stacks[0].Outputs[?OutputKey==\`FilesQueueUrl\`].OutputValue | [0]" \
+    --output text)
+
+  echo $queue_url
+}
+
 function connect() {
   app=$1
 
@@ -98,7 +107,6 @@ function destroy() {
   rm -rf output-frontend-user-data.txt
   rm -rf output-files-service-user-data.txt
 }
-
 
 function output() {
   log "Getting outputs from cloudformation stack"

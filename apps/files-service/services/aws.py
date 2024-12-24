@@ -1,12 +1,10 @@
 from typing import List
-import boto3
-import os
+import json
 
+import boto3
 from pydantic import BaseModel
 
-from config import AWS_REGION
-
-BUCKET_NAME = os.getenv('S3_BUCKET_NAME')
+from config import AWS_REGION, SQS_QUEUE_URL, BUCKET_NAME
 
 
 class FilePart(BaseModel):
@@ -55,3 +53,23 @@ def list_multipart_uploads() -> list[str]:
 
     return s3.list_multipart_uploads(Bucket=BUCKET_NAME)
 
+
+def queue_uploaded_file(file_id: str, file_name: str):
+    sqs = boto3.client('sqs', region_name=AWS_REGION)
+    res = sqs.send_message(
+        QueueUrl=SQS_QUEUE_URL,
+        MessageBody="file uploaded",
+        MessageAttributes={
+            "file_id": {
+                "DataType": "String",
+                "StringValue": file_id,
+            },
+            "file_name": {
+                "DataType": "String",
+                "StringValue": file_name,
+            }
+        }
+    )
+    if res.get('ResponseMetadata', {}).get('HTTPStatusCode') != 200:
+        raise Exception("Failed to queue uploaded file")
+    return res.get('MessageId')

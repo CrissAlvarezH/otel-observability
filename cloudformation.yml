@@ -132,6 +132,15 @@ Resources:
                 Resource:
                   - !GetAtt DynamoFilesTable.Arn
                   - !Join [ "/", [ !GetAtt DynamoFilesTable.Arn, "*" ] ]
+        - PolicyName: SQSAccessPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sqs:SendMessage
+                Resource:
+                  - !GetAtt FilesQueue.Arn
 
   AuthServiceInstance:
     Type: AWS::EC2::Instance
@@ -262,6 +271,13 @@ Resources:
         - Key: Name
           Value: otel-observability-files
 
+  FilesQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: otel-observability-files-queue
+      VisibilityTimeout: 900 # 15 minutes
+
+
 Outputs:
   FrontendInstancePublicIp:
     Description: Public IP of the frontend instance
@@ -274,3 +290,7 @@ Outputs:
   AuthServiceInstancePublicIp:
     Description: Public IP of the auth service instance
     Value: !GetAtt AuthServiceInstance.PublicIp
+
+  FilesQueueUrl:
+    Description: URL of the files queue
+    Value: !GetAtt FilesQueue.QueueUrl

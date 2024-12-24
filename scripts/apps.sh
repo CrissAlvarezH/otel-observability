@@ -34,6 +34,8 @@ EOF
 
   log "Connecting to files service instance"
 
+  queue_url=$(get_queue_url)
+
   ssh -o StrictHostKeyChecking=no \
     -i "./otel-observability.pem" ec2-user@"$files_service_ip" << EOF
     cd /home/ec2-user/
@@ -48,7 +50,8 @@ EOF
 
     cd apps/files-service
     echo "S3_BUCKET_NAME=otel-files-service" >> .env
-    echo 'AUTH_DOMAIN=http://$auth_service_ip' >> .env
+    echo "AUTH_DOMAIN=http://$auth_service_ip" >> .env
+    echo "SQS_QUEUE_URL=$queue_url" >> .env
     docker build -t otel-files-service .
     docker stop otel-files-service 2>/dev/null || true
     docker rm otel-files-service 2>/dev/null || true

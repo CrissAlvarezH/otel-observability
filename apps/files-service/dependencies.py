@@ -1,22 +1,18 @@
-import os
-import requests
 from fastapi import HTTPException, Header, Depends
 
-AUTH_DOMAIN = os.getenv("AUTH_DOMAIN")
+from services.auth import validate_token
 
 
-async def validate_token(token: str = Header()):
+async def auth(token: str = Header()):
     if not token:
         raise HTTPException(status_code=401)
-    
-    res = requests.post(
-        f"{AUTH_DOMAIN}/validate",
-        json={"token": token}
-    )
-    if res.status_code != 200:
+
+    ok, user = validate_token(token)
+    if not ok:
         raise HTTPException(status_code=401)
-    return res.json()
+
+    return user
 
 
-async def get_username(token: dict = Depends(validate_token)):
+async def get_username(token: dict = Depends(auth)):
     return token["username"]
