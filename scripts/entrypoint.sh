@@ -15,7 +15,7 @@ case $action in
     get_stack_status
   ;;
   deploy)
-    deploy
+    deploy_all
   ;;
   get-ip)
     get_ip $2

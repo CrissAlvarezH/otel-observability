@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { uploadFileByParts, fetchUploadedFiles } from './services/files';
 import { formatFileSize } from './lib/files';
 import { FilePickerButton } from './components/file-picker-btn';
-import { BackspaceIcon, CloudDone, Spinner, UploadIcon, CopyIcon, DoneIcon } from './components/icons';
+import { BackspaceIcon, CloudDone, Spinner, UploadIcon, RefreshIcon } from './components/icons';
 import { getTokens } from './services/tokens';
 
 
@@ -117,20 +117,29 @@ function UploadedFiles({ refreshUploads }) {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    callUploadedFiles();
+  }, [refreshUploads]);
+
+  const callUploadedFiles = () => {
     setIsLoading(true);
     fetchUploadedFiles()
       .then(res => setUploadedFiles(res.result))
       .catch(setError)
       .finally(() => setIsLoading(false));
-  }, [refreshUploads]);
+  }
 
   return (
     <div>
-      <div className="flex items-center gap-2 pb-2">
+      <div className="flex justify-between items-center gap-2 pb-2">
         <h1 className="text-xl font-bold">Uploaded Files</h1>
-        {isLoading && (
-          <Spinner className="fill-blue-600 w-5 h-5" />
-        )}
+
+        <button
+          className="p-1 bg-blue-100/50 rounded-full hover:bg-blue-100 transition-colors"
+          disabled={isLoading}
+          onClick={() => callUploadedFiles()}
+        >
+          {isLoading ? <Spinner className="fill-blue-600 w-5 h-5 m-0.5" /> : <RefreshIcon className="fill-blue-600 w-6 h-6" />}
+        </button>
       </div>
 
       <div className="flex flex-col gap-2">

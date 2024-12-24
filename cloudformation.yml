@@ -277,6 +277,79 @@ Resources:
       QueueName: otel-observability-files-queue
       VisibilityTimeout: 900 # 15 minutes
 
+  PipelineFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: otel-observability-pipeline-function-role
+      AssumeRolePolicyDocument: 
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+      Policies:
+        - PolicyName: SQSAccessPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sqs:ReceiveMessage
+                  - sqs:DeleteMessage
+                  - sqs:GetQueueAttributes
+                Resource:
+                  - !GetAtt FilesQueue.Arn
+        - PolicyName: DynamoDBAccessPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:UpdateItem
+                Resource:
+                  - !GetAtt DynamoFilesTable.Arn
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+          
+  PipelineFunctionLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: otel-observability-pipeline-function-logs
+
+  PipelineFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: otel-observability-pipeline-function
+      Handler: src.app.main
+      Code:
+        ZipFile: |
+          # this code will be replaced after, it is just to create de lambda function
+          def main(event, context):
+            print("empty lambda function")
+      Role: !GetAtt PipelineFunctionRole.Arn
+      Runtime: python3.10
+      Timeout: 900 # 15 minutes
+      LoggingConfig:
+        LogGroup: !Ref PipelineFunctionLogs
+        LogFormat: Text
+
+  PipelineLambdaSQSPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref PipelineFunction
+      Action: "lambda:InvokeFunction"
+      Principal: "sqs.amazonaws.com"
+      SourceArn: !GetAtt FilesQueue.Arn
+  
+  SQSEventSourceMapping:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      BatchSize: 5 # number of messages to process per invocation
+      EventSourceArn: !GetAtt FilesQueue.Arn
+      FunctionName: !Ref PipelineFunction
+      Enabled: True
+
 
 Outputs:
   FrontendInstancePublicIp:
