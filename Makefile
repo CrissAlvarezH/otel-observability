@@ -1,5 +1,5 @@
 
-.PHONY: setup deploy get-ip output connect destroy
+.PHONY: setup status deploy get-ip output connect logs destroy
 
 setup:
 	sh scripts/entrypoint.sh setup

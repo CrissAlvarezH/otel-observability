@@ -3,18 +3,18 @@ Proyecto a modo de ejercicio para utilizar Open Telemetry en un sistema distribu
 
 # Diseño
 El sistema tiene 4 aplicaciones
-1. **Frontend:** Encargado de presnetar la UI y permitir seleccionar archivos desde la maquina cliente y subirlos a S3
-2. **Files Service:** Es el backend que se comunica con S3 para generar urls prefirmadas y tambien guardar en la base de datos los archivos subidos
-3. **Auth Service:** Es un sistema de autenticación muy simplificado para este ejercicio el cual solo consiste en validar tokens preguardados en un tabla de la base de datos
-4. **Load Pipeline:** Es el encargado de tomar los mensajes de la cola que representan archivos subidos a S3 y cargar la data contenida en ellos hacia una tabla de un warehouse en Redshift
+1. **Frontend:** Interfaz de usuario que permite seleccionar archivos desde la máquina local y subirlos a S3
+2. **Files Service:** Servicio que se comunica con S3 para generar URLs prefirmadas y almacenar la metadata de los archivos subidos en la base de datos
+3. **Auth Service:** Sistema de autenticación simplificado que valida tokens pre-almacenados en una tabla de la base de datos
+4. **Load Pipeline:** Procesa mensajes de la cola que representan archivos subidos a S3 y carga sus datos en una tabla del warehouse Redshift
 
 Y cuenta con los siguientes componentes en su arquitectura (orientada a aws)
-1. **EC2 Instances:** Donde corren los servicios (API Rest) "Files Service" y "Auth Service"
-2. **RDS:** Base de datos
-3. **S3:** Donde se guardarán los archivos enviados desde el Frontend
-4. **SQS:** Cola para archivos guardados en S3
-5. **Lambda:** Donde estará desplegado el Load Pipeline
-6. **RedShift:** Warehouse serverless para cargar la data de los archivos
+1. **EC2 Instances:** Instancias donde se ejecutan el Frontend y los servicios (API Rest) Files Service y Auth Service
+2. **DynamoDB:** Base de datos NoSQL para almacenar la metadata de los archivos subidos
+3. **S3:** Servicio de almacenamiento donde se guardan los archivos enviados desde el Frontend
+4. **SQS:** Servicio de colas para gestionar los archivos guardados en S3
+5. **Lambda:** Servicio serverless donde se despliega el Load Pipeline
+6. **RedShift:** Data warehouse serverless para el análisis de los datos de los archivos
 
 # Proceso
 
@@ -33,16 +33,16 @@ Instalar [aws cli](https://aws.amazon.com/es/cli/) en la maquina cliente y confi
 make setup
 ```
 
-El anterior comando creará los recursos necesarios en aws para el proyecto, el nombre del stack es `otel-observability`.
+El anterior comando creará todos los recursos necesarios en aws para el proyecto, en CloudFormation el nombre del stack es `otel-observability`.
 
 > **Importante:**
-> Es necesario esperar a que el stack se cree completamente antes de continuar con el siguiente paso, para esto se puede ejecutar el comando `make status` que mostrará el estado del stack cada 2 segundos, cuando el estado sea `CREATE_COMPLETE` prosigue con el siguiente paso.
+> Es necesario esperar hasta que la creación del stack finalice por completo antes de continuar al siguiente paso. Para monitorear el progreso puedes ejecutar el comando `make status` que mostrará el estado actual del stack cada 2 segundos. Una vez que el estado cambie a `CREATE_COMPLETE` podrás proceder con el siguiente paso.
 
-### 3. Desplegar los servicios y aplicaciones
+### 3. Desplegar aplicaciones
 ```bash
 make deploy
 ```
-El anterior comando se conectará a las instancias EC2 creadas en el paso anterior y desplegará las aplicaciones de `frontend`, `files service` y `auth service` construyendo imagenes docker pada cada una en sus respectivas instancias.
+El anterior comando se conectará a las instancias EC2 creadas en el paso anterior y desplegará las aplicaciones de `frontend`, `files service` y `auth service` construyendo imagenes docker pada cada una en sus respectivas instancias. Ademas, empaquetará y desplegará el lambda `load-pipeline`.
 Una vez terminado el deploy verás en la console las urls de acceso a cada una de las aplicaciones.
 Ejemplo:
 

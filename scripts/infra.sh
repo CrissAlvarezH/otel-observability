@@ -90,7 +90,6 @@ function destroy() {
   log "Deleting key pair"
 
   aws ec2 delete-key-pair --key-name otel-observability
-  rm -f otel-observability.pem
 
   log "Emptying otel-files-service s3 bucket"
 
@@ -104,8 +103,6 @@ function destroy() {
 
   rm -rf otel-observability.pem
   rm -rf outputs.json
-  rm -rf output-frontend-user-data.txt
-  rm -rf output-files-service-user-data.txt
 }
 
 function output() {
