@@ -1,8 +1,13 @@
+import requests
+
 from .services import update_file_status, copy_content_to_redshift
 
 
 def main(event, context):
-    for r in event['Records']:
+    res = requests.get("https://pokeapi.co/api/v2/pokemon/ditto")
+    print("pokemon ditto:",res.json())
+
+    for r in event["Records"]:
         process_message(r)
 
 

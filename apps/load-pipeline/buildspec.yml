@@ -1,0 +1,20 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.9
+    commands:
+      - pip install poetry
+      - cd apps/load-pipeline
+      - poetry export --without-hashes --format=requirements.txt --output=requirements.txt
+      - pip install -r requirements.txt --target ./package
+      - cp -r src ./package/src
+  
+  build:
+    commands:
+      - python -m zipfile -c pipeline-function.zip ./package/*
+
+  post_build:
+    commands:
+      - aws lambda update-function-code --function-name $LAMBDA_FUNCTION_NAME --zip-file fileb://pipeline-function.zip

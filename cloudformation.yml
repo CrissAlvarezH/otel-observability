@@ -341,7 +341,58 @@ Resources:
       Action: "lambda:InvokeFunction"
       Principal: "sqs.amazonaws.com"
       SourceArn: !GetAtt FilesQueue.Arn
-  
+
+  PipelineCodeBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codebuild.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: LoadPipelineFunctionPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - lambda:UpdateFunctionCode
+                  - lambda:GetFunction
+                Resource:
+                  - !GetAtt PipelineFunction.Arn
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource:
+                  - "*"
+
+  PipelineCodeBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: otel-observability-pipeline-codebuild-project
+      Source:
+        Type: GITHUB
+        Location: https://github.com/CrissAlvarezH/otel-observability.git
+        BuildSpec: apps/load-pipeline/buildspec.yml
+      ServiceRole: !GetAtt PipelineCodeBuildRole.Arn
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:5.0
+        Type: LINUX_CONTAINER
+        EnvironmentVariables:
+          - Name: AWS_REGION
+            Value: us-east-1
+          - Name: LAMBDA_FUNCTION_NAME
+            Value: otel-observability-pipeline-function
+      Artifacts:
+        Type: NO_ARTIFACTS
+      TimeoutInMinutes: 15
+
   SQSEventSourceMapping:
     Type: AWS::Lambda::EventSourceMapping
     Properties:

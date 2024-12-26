@@ -9,13 +9,15 @@ function deploy_all() {
   files_service_ip=$(get_ip files-service)
   auth_service_ip=$(get_ip auth-service)
 
+  run_pipeline_codebuild_deploy
+
   deploy_frontend $frontend_ip $files_service_ip $auth_service_ip
 
   deploy_auth_service $auth_service_ip
 
   deploy_files_service $files_service_ip $auth_service_ip
 
-  deploy_pipeline_function 
+  wait_for_lambda_codebuild_to_finish $build_id
 
   log "Seeding tokens"
   curl -X POST http://$auth_service_ip/seed
@@ -111,36 +113,37 @@ function deploy_auth_service() {
 EOF
 }
 
-function deploy_pipeline_function() {
-  log "deploying pipeline function"
-  filename="pipeline-function.zip"
+function run_pipeline_codebuild_deploy() {
+  log "running pipeline codebuild"
 
-  log "packaging dependencies"
-  cd apps/load-pipeline
-  poetry export --without-hashes --format=requirements.txt --output=requirements.txt
-  pip install -r requirements.txt --target ./package
-  cd ./package
-  zip -r "../$filename" .
-  cd ..
+  build_id=$(aws codebuild start-build \
+    --project-name "otel-observability-pipeline-codebuild-project" \
+    --region "us-east-1" \
+    --query "build.id" \
+    --output text \
+    | cat)
+}
 
-  log "including code app to package"
-  zip -r $filename src
+function wait_for_lambda_codebuild_to_finish() {
+  log "waiting for build id: $build_id to finish"
+  while true; do
+    build_status=$(aws codebuild batch-get-builds \
+      --ids $build_id \
+      --query "builds[0].buildStatus" \
+      --output text \
+      --region "us-east-1" \
+      | cat)
 
-  # cleanup
-  rm requirements.txt 
-  rm -r package
+    if [ "$build_status" == "SUCCEEDED" ]; then
+      log "lambda function deployed successfully"
+      break
+    fi
+    if [ "$build_status" == "FAILED" ]; then
+      log "lambda function deployment failed"
+      exit 1
+    fi
 
-  log "pipeline package $filename created successfully"
-
-  log "updating pipeline lambda code"
-
-  aws lambda update-function-code \
-    --function-name "otel-observability-pipeline-function" \
-    --zip-file "fileb://$filename" \
-    | cat
-
-  rm $filename
-
-  # come back to the project root directory
-  cd ../.. 
+    log "lambda codebuild deployment status: $build_status ... waiting 5 seconds"
+    sleep 5
+  done
 }

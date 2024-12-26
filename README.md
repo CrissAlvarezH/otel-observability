@@ -14,7 +14,8 @@ Y cuenta con los siguientes componentes en su arquitectura (orientada a aws)
 3. **S3:** Servicio de almacenamiento donde se guardan los archivos enviados desde el Frontend
 4. **SQS:** Servicio de colas para gestionar los archivos guardados en S3
 5. **Lambda:** Servicio serverless donde se despliega el Load Pipeline
-6. **RedShift:** Data warehouse serverless para el análisis de los datos de los archivos
+6. **CodeBuild:** Servicio para construir el lambda function para la app Load Pipeline
+7. **RedShift:** Data warehouse serverless para el análisis de los datos de los archivos
 
 # Proceso
 
