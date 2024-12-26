@@ -12,8 +12,9 @@ export default function App() {
   const [uploadBatchSize, setUploadBatchSize] = useState();
   const [uploadPartSize, setUploadPartSize] = useState();
   const [token, setToken] = useState();
+
   const handleSelectFile = (file) => {
-    setFiles([...files, { file }]);
+    setFiles([...files, { file: file.file, headers: file.headers }]);
   };
 
   const handleRemoveFile = (file) => {
@@ -159,6 +160,14 @@ function UploadedFiles({ refreshUploads }) {
                     <p className="font-medium text-gray-800 truncate">{file.filename}</p>
                     <p className="text-xs border border-gray-300 px-2 rounded-md">{file.username}</p>
                   </div>
+
+                  <p className="text-gray-500 text-xs pt-1">Columns:</p>
+                  <p
+                    className="text-gray-500 text-xs inline-block border px-1 bg-gray-100/50 rounded truncate text-ellipsis"
+                    title={file.columns.join(', ')}>
+                    {file.columns.join(', ').slice(0, 50) + "..."}
+                  </p>
+
                   <div className="flex gap-1.5 items-baseline">
                     <p className="text-gray-500 text-sm">{formatFileSize(file.file_size)}</p>
                     <p className="text-gray-400 font-extralight">|</p>
@@ -183,7 +192,10 @@ function FileToUpload({ file, uploadConfig, onRemove, onUploadSuccess, onUploadE
   const handleUpload = async (file) => {
     setIsUploading(true);
 
-    uploadFileByParts(file.file, {
+    uploadFileByParts({
+      file: file.file,
+      columns: file.headers,
+    }, {
       batchSize: uploadConfig?.batchSize,
       partSize: uploadConfig?.partSize,
       token: uploadConfig?.token,
@@ -204,14 +216,20 @@ function FileToUpload({ file, uploadConfig, onRemove, onUploadSuccess, onUploadE
     <div className="bg-white shadow-md rounded-lg py-4 px-6 border flex items-center justify-between gap-10 min-w-[300px]">
       <div>
         <p className="font-medium text-gray-800 truncate">{file.file.name}</p>
-        <p className="text-gray-500 text-sm">{formatFileSize(file.file.size)}</p>
+        {file.uploadError && (
+          <p className="text-red-500 text-sm max-w-56">
+            Error: {file.uploadError.message}
+          </p>
+        )}
+        <p className="text-gray-500 text-xs pt-1">Columns:</p>
+        <p
+          className="text-gray-500 text-xs border px-1 bg-gray-100/50 rounded truncate text-ellipsis"
+          title={file.headers.join(', ')}>
+          {file.headers.join(', ').slice(0, 50) + "..."}
+        </p>
+        <p className="text-gray-500 text-sm pt-1">{formatFileSize(file.file.size)}</p>
       </div>
 
-      {file.uploadError && (
-        <p className="text-red-500 text-sm max-w-56">
-          Error: {file.uploadError.message}
-        </p>
-      )}
 
       <div className="flex gap-0.5">
 

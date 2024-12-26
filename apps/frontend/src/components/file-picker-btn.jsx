@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useRef } from "react";
+import { getCsvHeadersColumns } from "../lib/files";
 
 export function FilePickerButton({
 	className,
@@ -11,8 +12,10 @@ export function FilePickerButton({
 	const handleFileChange = (event) => {
 		const file = event.target.files?.[0];
 		if (file) {
-			onSelectFile(file);
-			setError(null);
+			getCsvHeadersColumns(file, (headers) => {
+				onSelectFile({ file, headers });
+				setError(null);
+			});
 		} else {
 			setError("No file selected");
 		}
@@ -29,6 +32,7 @@ export function FilePickerButton({
 			<input
 				ref={fileInputRef}
 				type="file"
+				accept=".csv"
 				className="hidden"
 				onChange={handleFileChange}
 			/>

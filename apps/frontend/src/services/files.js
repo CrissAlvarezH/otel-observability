@@ -11,8 +11,8 @@ export const DEFAULT_PART_SIZE = 5;
  * @param options.onProgress - A callback function that will be called with the progress of the upload.
  * @param options.token - The token to use for the upload.
  */
-export async function uploadFileByParts(file, { batchSize, partSize = DEFAULT_PART_SIZE, onProgress, token } = {}) {
-  const { uploadId, fileId } = await initUpload(file, token);
+export async function uploadFileByParts({ file, columns }, { batchSize, partSize = DEFAULT_PART_SIZE, onProgress, token } = {}) {
+  const { uploadId, fileId } = await initUpload(file, columns, token);
   const uploadPartJobs = [];
   const partSizeInMB = partSize * 1024 * 1024;
   const totalParts = Math.ceil(file.size / partSizeInMB);
@@ -47,13 +47,14 @@ export async function uploadFileByParts(file, { batchSize, partSize = DEFAULT_PA
   onProgress?.(100);
 }
 
-async function initUpload(file, token) {
+async function initUpload(file, columns, token) {
   const initRes = await fetch(`${API_DOMAIN}/upload/init`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "Token": token },
     body: JSON.stringify({
       filename: file.name,
       file_size: file.size,
+      columns: columns,
     }),
   });
   if (!initRes.ok) {

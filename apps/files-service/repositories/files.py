@@ -1,7 +1,8 @@
-import boto3
+from typing import List
 from datetime import datetime
 from ulid import ULID
 
+import boto3
 from pydantic import BaseModel, Field
 from boto3.dynamodb.conditions import Key
 
@@ -12,6 +13,7 @@ class InsertFile(BaseModel):
     file_size: int
     status: str = Field(default='pending', description='pending, stored, loaded')
     username: str
+    columns: List[str]
 
 
 class UpdateFile(BaseModel):
@@ -60,6 +62,7 @@ def insert_file(file: InsertFile) -> str:
             "file_size": {"N": str(file.file_size)},
             "status": {"S": file.status},
             "username": {"S": file.username},
+            "columns": {"L": [{"S": col} for col in file.columns]},
             # data_type is an artificial attribute to "hack" dynamodb 
             # because its required add a hash key in GlobalSecondaryIndexes
             "data_type": {"S": "FILE"}, 

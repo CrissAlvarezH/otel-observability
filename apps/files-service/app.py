@@ -30,6 +30,7 @@ app.add_middleware(
 def init_upload_route(
     filename: str = Body(),
     file_size: int = Body(),
+    columns: List[str] = Body(),
     username: str = Depends(get_username),
 ):
     upload_id = init_upload(filename)
@@ -37,6 +38,7 @@ def init_upload_route(
         filename=filename,
         file_size=file_size,
         username=username,
+        columns=columns,
     ))
     return {"upload_id": upload_id, "file_id": file_id}
 

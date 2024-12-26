@@ -1,4 +1,4 @@
-from .services import update_file_status
+from .services import update_file_status, copy_content_to_redshift
 
 
 def main(event, context):
@@ -14,6 +14,6 @@ def process_message(msg):
 
     update_file_status(file_id, "loading")
 
-    # TODO: process the file
+    copy_content_to_redshift(file_name)
 
     update_file_status(file_id, "loaded")

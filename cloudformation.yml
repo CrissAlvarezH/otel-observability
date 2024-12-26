@@ -350,6 +350,47 @@ Resources:
       FunctionName: !Ref PipelineFunction
       Enabled: True
 
+  RedshiftServerlessNamespace:
+    Type: AWS::RedshiftServerless::Namespace
+    Properties:
+      NamespaceName: "otel-observability-namespace"
+      AdminUsername: "otel"
+      AdminUserPassword: "OtelObservability123"
+      DbName: "otel-observability"
+      DefaultIamRoleArn: !GetAtt RedshiftServerlessIamRole.Arn
+      IamRoles:
+        - !GetAtt RedshiftServerlessIamRole.Arn
+
+  RedshiftServerlessWorkgroup:
+    Type: AWS::RedshiftServerless::Workgroup
+    Properties:
+      WorkgroupName: "otel-observability-workgroup"
+      NamespaceName: !Ref RedshiftServerlessNamespace
+      BaseCapacity: 8 
+      EnhancedVpcRouting: true
+
+  RedshiftServerlessIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: redshift-serverless.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: "RedshiftServerlessS3Access"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:ListBucket
+                Resource:
+                  - !Sub arn:aws:s3:::${Bucket}/*
+                  - !Sub arn:aws:s3:::${Bucket}
 
 Outputs:
   FrontendInstancePublicIp:

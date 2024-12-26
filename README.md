@@ -38,6 +38,9 @@ El anterior comando creará todos los recursos necesarios en aws para el proyect
 > **Importante:**
 > Es necesario esperar hasta que la creación del stack finalice por completo antes de continuar al siguiente paso. Para monitorear el progreso puedes ejecutar el comando `make status` que mostrará el estado actual del stack cada 2 segundos. Una vez que el estado cambie a `CREATE_COMPLETE` podrás proceder con el siguiente paso.
 
+> **Nota:**
+> Por simplicidad se utiliza la VPC por defecto para crear el Redshift Serverless Workgroup, asegurate de tener una en la region especificada.
+
 ### 3. Desplegar aplicaciones
 ```bash
 make deploy
@@ -62,3 +65,6 @@ Auth Service: http://34.0.10.10/docs
 6. `make status`: Obtiene el estado del stack de infraestructura
 
 > Valores validos para `<app>`: `frontend`, `files-service`, `auth-service`
+
+### Datasets de ejemplo
+- [ExploreToM (Hugging Face) 31MB](https://huggingface.co/datasets/facebook/ExploreToM/blob/main/ExploreToM-data-sample.csv)
