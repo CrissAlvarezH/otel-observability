@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 function log() {
   GREEN='\033[0;32m'
   YELLOW="\033[0;33m"
