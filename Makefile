@@ -4,6 +4,9 @@
 setup:
 	sh scripts/entrypoint.sh setup
 
+update:
+	sh scripts/entrypoint.sh update
+
 status:
 	sh scripts/entrypoint.sh status
 

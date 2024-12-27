@@ -29,6 +29,16 @@ function setup() {
     | cat
 }
 
+function update_stack() {
+  log "Updating aws cloudformation stack"
+
+  aws cloudformation update-stack \
+    --stack-name otel-observability \
+    --template-body file://cloudformation.yml \
+    --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND \
+    | cat
+}
+
 function get_stack_status() {
 
   while true; do

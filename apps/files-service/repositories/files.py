@@ -12,6 +12,7 @@ class InsertFile(BaseModel):
     filename: str
     file_size: int
     status: str = Field(default='pending', description='pending, stored, loaded')
+    row_count: int
     username: str
     columns: List[str]
 
@@ -67,6 +68,7 @@ def insert_file(file: InsertFile) -> str:
             # because its required add a hash key in GlobalSecondaryIndexes
             "data_type": {"S": "FILE"}, 
             "creation_datetime": {"S": datetime.now().strftime("%Y-%m-%d %H:%M:%S")},
+            "row_count": {"N": str(file.row_count)},
         }
     )
     if res.get('ResponseMetadata', {}).get('HTTPStatusCode') != 200:

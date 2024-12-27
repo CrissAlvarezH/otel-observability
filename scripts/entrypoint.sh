@@ -11,6 +11,9 @@ case $action in
   setup)
     setup
   ;;
+  update)
+    update_stack
+  ;;
   status)
     get_stack_status
   ;;

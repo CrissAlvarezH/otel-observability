@@ -13,8 +13,8 @@ export default function App() {
   const [uploadPartSize, setUploadPartSize] = useState();
   const [token, setToken] = useState();
 
-  const handleSelectFile = (file) => {
-    setFiles([...files, { file: file.file, headers: file.headers }]);
+  const handleSelectFile = (data) => {
+    setFiles([...files, { file: data.file, headers: data.headers, rowCount: data.rowCount }]);
   };
 
   const handleRemoveFile = (file) => {
@@ -22,7 +22,7 @@ export default function App() {
   };
 
   const handleUploadSuccess = (file) => {
-    setFiles(files.map(f => f.file.name !== file.file.name ? f : { ...f, isUploaded: true }));
+    setFiles(files.map(f => f.file.name !== file.file.name ? f : { ...f, isUploaded: true, uploadError: null }));
     setRefreshUploads(prev => !prev);
   };
 
@@ -169,6 +169,8 @@ function UploadedFiles({ refreshUploads }) {
                   </p>
 
                   <div className="flex gap-1.5 items-baseline">
+                    <p className="text-gray-500 text-sm">{file.row_count} rows</p>
+                    <p className="text-gray-400 font-extralight">|</p>
                     <p className="text-gray-500 text-sm">{formatFileSize(file.file_size)}</p>
                     <p className="text-gray-400 font-extralight">|</p>
                     <p className="font-light text-sm">{file.creation_datetime}</p>
@@ -195,6 +197,7 @@ function FileToUpload({ file, uploadConfig, onRemove, onUploadSuccess, onUploadE
     uploadFileByParts({
       file: file.file,
       columns: file.headers,
+      rowCount: file.rowCount,
     }, {
       batchSize: uploadConfig?.batchSize,
       partSize: uploadConfig?.partSize,
@@ -227,7 +230,12 @@ function FileToUpload({ file, uploadConfig, onRemove, onUploadSuccess, onUploadE
           title={file.headers.join(', ')}>
           {file.headers.join(', ').slice(0, 50) + "..."}
         </p>
-        <p className="text-gray-500 text-sm pt-1">{formatFileSize(file.file.size)}</p>
+
+        <div className="flex gap-1.5 items-baseline">
+          <p className="text-gray-500 text-sm">{file.rowCount} rows</p>
+          <p className="text-gray-400 font-extralight">|</p>
+          <p className="text-gray-500 text-sm">{formatFileSize(file.file.size)}</p>
+        </div>
       </div>
 
 

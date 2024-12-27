@@ -31,6 +31,7 @@ def init_upload_route(
     filename: str = Body(),
     file_size: int = Body(),
     columns: List[str] = Body(),
+    row_count: int = Body(),
     username: str = Depends(get_username),
 ):
     upload_id = init_upload(filename)
@@ -39,6 +40,7 @@ def init_upload_route(
         file_size=file_size,
         username=username,
         columns=columns,
+        row_count=row_count,
     ))
     return {"upload_id": upload_id, "file_id": file_id}
 

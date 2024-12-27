@@ -12,8 +12,8 @@ export function FilePickerButton({
 	const handleFileChange = (event) => {
 		const file = event.target.files?.[0];
 		if (file) {
-			getCsvHeadersColumns(file, (headers) => {
-				onSelectFile({ file, headers });
+			getCsvHeadersColumns(file, (headers, rowCount) => {
+				onSelectFile({ file, headers, rowCount });
 				setError(null);
 			});
 		} else {

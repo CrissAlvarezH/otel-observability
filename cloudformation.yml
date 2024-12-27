@@ -96,6 +96,7 @@ Resources:
   FilesServiceInstanceRole:
     Type: AWS::IAM::Role
     Properties:
+      RoleName: otel-observability-files-service-role
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -193,6 +194,7 @@ Resources:
   AuthServiceInstanceRole:
     Type: AWS::IAM::Role
     Properties:
+      RoleName: otel-observability-auth-service-role
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -309,6 +311,19 @@ Resources:
                   - dynamodb:UpdateItem
                 Resource:
                   - !GetAtt DynamoFilesTable.Arn
+        - PolicyName: RedshiftServerlessAccessPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - redshift-data:ExecuteStatement
+                  - redshift-serverless:GetCredentials
+                  - redshift-data:GetStatementResult
+                  - redshift-data:DescribeStatement
+                  - redshift-data:ListStatements
+                Resource:
+                  - "*"
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
           
@@ -345,6 +360,7 @@ Resources:
   PipelineCodeBuildRole:
     Type: AWS::IAM::Role
     Properties:
+      RoleName: otel-observability-pipeline-codebuild-role
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -396,7 +412,7 @@ Resources:
           - Name: REDSHIFT_WORKGROUP
             Value: !Ref RedshiftServerlessWorkgroup
           - Name: REDSHIFT_DATABASE
-            Value: !Ref RedshiftServerlessNamespace
+            Value: otel-observability
       Artifacts:
         Type: NO_ARTIFACTS
       TimeoutInMinutes: 15
@@ -431,12 +447,15 @@ Resources:
   RedshiftServerlessIamRole:
     Type: AWS::IAM::Role
     Properties:
+      RoleName: otel-observability-redshift-serverless-role
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
-              Service: redshift-serverless.amazonaws.com
+              Service: 
+                - redshift-serverless.amazonaws.com
+                - redshift.amazonaws.com
             Action: sts:AssumeRole
       Policies:
         - PolicyName: "RedshiftServerlessS3Access"

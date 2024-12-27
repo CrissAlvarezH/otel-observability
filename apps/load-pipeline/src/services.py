@@ -1,4 +1,6 @@
 import os
+import time
+import re
 
 import boto3
 
@@ -14,7 +16,22 @@ def get_file_metadata(file_id: str):
         TableName='otel-observability-files',
         Key={'id': {'S': file_id}},
     )
-    return res.get('Item', None)
+    if res.get('ResponseMetadata', {}).get('HTTPStatusCode') != 200:
+        raise Exception("Failed to get file metadata")
+
+    item = res.get('Item', None)
+    if not item:
+        raise Exception("File not found")
+
+    # transform dynamodb format to a dict
+    data = {}
+    for k, v in item.items():
+        if "L" in v:
+            data[k] = [c['S'] for c in v['L']]
+        else:
+            data[k] = v['S'] if "S" in v else v['N']
+
+    return data
 
 
 def update_file_status(file_id: str, status: str):
@@ -34,37 +51,65 @@ def update_file_status(file_id: str, status: str):
 def copy_content_to_redshift(file: dict):
     redshift = boto3.client('redshift-data', region_name=AWS_REGION)
 
-    create_table_command = f"""
-        CREATE TABLE IF NOT EXISTS files_data (
-            {', '.join([f'{c} TEXT' for c in file["columns"]])}
+    table_name = re.sub(r'[^a-zA-Z0-9_]', '_', file["filename"])
+
+    print("creating table", table_name, "for file", file["filename"])
+    exec_and_wait(redshift, f"""
+        CREATE TABLE IF NOT EXISTS "public"."{table_name}" (
+            {', '.join([f'"{c}" TEXT' for c in file["columns"]])}
         );
-    """
+    """)
 
-    create_table_response = redshift.execute_statement(
-        WorkgroupName=REDSHIFT_WORKGROUP,
-        Database=REDSHIFT_DATABASE,
-        Sql=create_table_command
-    )
-
-    if create_table_response.get('ResponseMetadata', {}).get('HTTPStatusCode') != 200:
-        raise Exception("Failed to create table")
-
-    copy_command = f"""
-        COPY files_data 
-        FROM 's3://{S3_BUCKET_NAME}/{file['file_name']}'
+    print("copying data from s3 to redshift to table:", table_name,"file:", file["filename"])
+    exec_and_wait(redshift, f"""
+        COPY {table_name}
+        FROM 's3://{S3_BUCKET_NAME}/{file['filename']}'
         IAM_ROLE default
         REGION '{AWS_REGION}'
         IGNOREHEADER 1
         FORMAT CSV;
-    """
+    """, max_checks=-1)
 
-    response = redshift.execute_statement(
+
+def exec_and_wait(client: boto3.client, query: str, max_checks: int = 20):
+    """
+        Executes a query and waits for it to finish.
+        If max_checks is not provided, it will wait indefinitely.
+
+        Parameters:
+            client: boto3 client of redshift
+            query: query to execute
+            max_checks: maximum number of checks to wait for the query to finish (-1 for infinite)
+    """
+    stm = client.execute_statement(
         WorkgroupName=REDSHIFT_WORKGROUP,
         Database=REDSHIFT_DATABASE,
-        Sql=copy_command
+        Sql=query
     )
+    if stm.get('ResponseMetadata', {}).get('HTTPStatusCode') != 200:
+        raise Exception("Failed to execute statement")
 
-    if response.get('ResponseMetadata', {}).get('HTTPStatusCode') != 200:
-        raise Exception("Failed to copy file to Redshift")
+    query_id = stm.get('Id')
 
-    return response['Id']
+    last_status = ""
+    status = ""
+    checks = 0
+    while status != 'FINISHED':
+        desc = client.describe_statement(Id=query_id)
+        status = desc.get('Status')
+
+        # show logs only if status changed
+        if last_status != status:
+            print("describe statement:", status, desc, "... waiting 5 seconds")
+            last_status = status
+
+        if status == 'FAILED':
+            raise Exception("Failed to copy data")
+
+        if max_checks  > -1:
+            checks += 1
+            if checks > max_checks:
+                raise Exception("Timeout waiting for copy data to finish")
+        time.sleep(5)
+
+    return query_id

@@ -56,6 +56,10 @@ Files Service: http://34.0.10.10/docs
 Auth Service: http://34.0.10.10/docs
 ```
 
+## A tener en cuenta
+1. Bucket: El bucket puede que ya exista, en ese caso especifica otro nombre en el .env
+2. Redshift credenciales: usuario `otel` y contraseña `OtelObservability123`
+
 ## Comandos de utilidad
 
 1. `make destroy`: Destruye el stack de infraestructura
