@@ -8,7 +8,7 @@ Frontend [icon: monitor, color: black]
 Files Service [icon: aws-ec2, color: orange]
 Auth Service [icon: aws-ec2, color: orange]
 S3 [icon: aws-s3, color: green]
-Database [icon: aws-rds, color: blue]
+Database [icon: aws-dynamodb, color: blue]
 Queue [icon: aws-sqs, color: purple]
 Load Pipeline [icon: aws-lambda, color: orange]
 Warehouse [icon: aws-redshift, color: blue]
@@ -46,6 +46,9 @@ deactivate Files Service
 deactivate Frontend
 Load Pipeline < Queue: deque a file
 activate Load Pipeline
+Load Pipeline > Database: Update file status to "loading"
+Load Pipeline <> Database: Get file information
+Load Pipeline > Warehouse: Create table
 Load Pipeline > Warehouse: Copy file data
 Load Pipeline > Warehouse: Add timestamp column
 Load Pipeline > Database: Update file status to "loaded"
