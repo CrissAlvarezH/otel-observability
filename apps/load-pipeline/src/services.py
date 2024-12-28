@@ -56,7 +56,7 @@ def copy_content_to_redshift(file: dict):
     print("creating table", table_name, "for file", file["filename"])
     exec_and_wait(redshift, f"""
         CREATE TABLE IF NOT EXISTS "public"."{table_name}" (
-            {', '.join([f'"{c}" TEXT' for c in file["columns"]])}
+            {', '.join([f'"{c}" VARCHAR(10000)' for c in file["columns"]])}
         );
     """)
 

@@ -99,15 +99,15 @@ function connect() {
 function destroy() {
   log "Deleting key pair"
 
-  aws ec2 delete-key-pair --key-name otel-observability
+  aws ec2 delete-key-pair --key-name otel-observability &> /dev/null
 
   log "Emptying otel-files-service s3 bucket"
 
-  aws s3 rm s3://otel-files-service --recursive
+  aws s3 rm s3://otel-files-service --recursive &> /dev/null
 
   log "Destroying cloudformation stack"
 
-  aws cloudformation delete-stack --stack-name otel-observability
+  aws cloudformation delete-stack --stack-name otel-observability &> /dev/null
 
   log "Cleaning up"
 

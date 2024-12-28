@@ -442,6 +442,7 @@ Resources:
       WorkgroupName: "otel-observability-workgroup"
       NamespaceName: !Ref RedshiftServerlessNamespace
       BaseCapacity: 8 
+      PubliclyAccessible: true # to allow copy from s3
       EnhancedVpcRouting: true
 
   RedshiftServerlessIamRole:
