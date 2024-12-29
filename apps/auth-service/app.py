@@ -1,10 +1,11 @@
-from fastapi import FastAPI, Body, Response
 from dotenv import load_dotenv
+load_dotenv()
+
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, Body, Response
 
 from repository import add_token, scan_tokens, get_token, seed_tokens
 
-load_dotenv()
 
 app = FastAPI()
 

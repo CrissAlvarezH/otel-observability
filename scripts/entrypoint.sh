@@ -11,6 +11,9 @@ case $action in
   setup)
     setup
   ;;
+  info)
+    info
+  ;;
   update)
     update_stack
   ;;

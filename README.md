@@ -28,7 +28,15 @@ Y cuenta con los siguientes componentes en su arquitectura (orientada a aws)
 
 Instalar [aws cli](https://aws.amazon.com/es/cli/) en la maquina cliente y configurar las credenciales de acceso a aws con los permisos necesarios para crear los recursos de la infraestructura.
 
-### 2. Crear el stack de infraestructura
+### 2. Configurar variables de entorno (Opcional)
+
+Si deseas cambiar los valores por defecto (descritos a continuacion) puedes hacerlo creando un archivo `.env` en la raiz del proyecto, basado en el archivo `.env.example`:
+#### Valores por defecto
+- `AWS_REGION`: `us-east-1`
+- `S3_BUCKET_NAME`: `otel-files-service`
+
+
+### 3. Crear el stack de infraestructura
 
 ```bash
 make setup
@@ -37,12 +45,12 @@ make setup
 El anterior comando creará todos los recursos necesarios en aws para el proyecto, en CloudFormation el nombre del stack es `otel-observability`.
 
 > **Importante:**
-> Es necesario esperar hasta que la creación del stack finalice por completo antes de continuar al siguiente paso. Para monitorear el progreso puedes ejecutar el comando `make status` que mostrará el estado actual del stack cada 2 segundos. Una vez que el estado cambie a `CREATE_COMPLETE` podrás proceder con el siguiente paso.
+> Espera hasta que el stack se cree completamente antes de continuar. Usa `make status` para monitorear el progreso. Cuando el estado sea `CREATE_COMPLETE`, puedes proceder.
 
 > **Nota:**
 > Por simplicidad se utiliza la VPC por defecto para crear el Redshift Serverless Workgroup, asegurate de tener una en la region especificada.
 
-### 3. Desplegar aplicaciones
+### 4. Desplegar aplicaciones
 ```bash
 make deploy
 ```
@@ -57,8 +65,7 @@ Auth Service: http://34.0.10.10/docs
 ```
 
 ## A tener en cuenta
-1. Bucket: El bucket puede que ya exista, en ese caso especifica otro nombre en el .env
-2. Redshift credenciales: usuario `otel` y contraseña `OtelObservability123`
+2. Redshift: usuario `otel`, contraseña `OtelObservability123`
 
 ## Comandos de utilidad
 
@@ -68,6 +75,7 @@ Auth Service: http://34.0.10.10/docs
 4. `make connect app=<app>`: Conecta a una instancia EC2 y le permite ejecutar comandos
 5. `make logs app=<app>`: Obtiene los logs de una aplicación
 6. `make status`: Obtiene el estado del stack de infraestructura
+7. `make info`: Obtiene información de las aplicaciones desplegadas (region, bucket name, ips, etc)
 
 > Valores validos para `<app>`: `frontend`, `files-service`, `auth-service`
 

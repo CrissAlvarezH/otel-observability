@@ -78,8 +78,9 @@ function deploy_files_service() {
     fi
 
     cd apps/files-service
-    echo "S3_BUCKET_NAME=otel-files-service" >> .env
+    echo "S3_BUCKET_NAME=$S3_BUCKET_NAME" >> .env
     echo "AUTH_DOMAIN=http://$auth_service_ip" >> .env
+    echo "AWS_REGION=$AWS_REGION" >> .env
     echo "SQS_QUEUE_URL=$queue_url" >> .env
     docker build -t otel-files-service .
     docker stop otel-files-service 2>/dev/null || true
@@ -106,6 +107,7 @@ function deploy_auth_service() {
     fi
 
     cd apps/auth-service
+    echo "AWS_REGION=$AWS_REGION" >> .env
     docker build -t otel-auth-service .
     docker stop otel-auth-service 2>/dev/null || true
     docker rm otel-auth-service 2>/dev/null || true
@@ -118,7 +120,7 @@ function run_pipeline_codebuild_deploy() {
 
   build_id=$(aws codebuild start-build \
     --project-name "otel-observability-pipeline-codebuild-project" \
-    --region "us-east-1" \
+    --region $AWS_REGION \
     --query "build.id" \
     --output text \
     | cat)
@@ -131,7 +133,7 @@ function wait_for_lambda_codebuild_to_finish() {
       --ids $build_id \
       --query "builds[0].buildStatus" \
       --output text \
-      --region "us-east-1" \
+      --region $AWS_REGION \
       | cat)
 
     if [ "$build_status" == "SUCCEEDED" ]; then

@@ -5,11 +5,23 @@ set -e
 DIR=$(cd $(dirname "${BASH_SOURCE[0]}") && pwd)
 source "$DIR/base.sh"
 
+
 function setup() {
+  log "Region: $AWS_REGION"
+  log "Destination bucket: $S3_BUCKET_NAME"
+
+  log "Validation s3 bucket $S3_BUCKET_NAME is available"
+
+  if aws s3 ls s3://$S3_BUCKET_NAME 2>/dev/null; then
+    log "Bucket already exists" "error"
+    exit 1
+  fi
+
   log "Creating key pairs to access instances"
 
   aws ec2 create-key-pair \
     --key-name otel-observability \
+    --region $AWS_REGION \
     --query 'KeyMaterial' \
     --output text > otel-observability.pem
 
@@ -23,10 +35,22 @@ function setup() {
   log "Creating aws cloudformation stack"
 
   aws cloudformation create-stack \
+    --region $AWS_REGION \
     --stack-name otel-observability \
     --template-body file://cloudformation.yml \
+    --parameters ParameterKey=BucketName,ParameterValue=$S3_BUCKET_NAME \
     --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND \
     | cat
+}
+
+function info() {
+  frontend_ip=$(get_ip frontend)
+  files_service_ip=$(get_ip files-service)
+  auth_service_ip=$(get_ip auth-service)
+
+  log "INFRAESTRUCTURE:\n  Region: $AWS_REGION \n  Destination bucket: $S3_BUCKET_NAME"
+
+  log "APPLICATIONS:\n  Frontend: http://$frontend_ip \n  Files service: http://$files_service_ip/docs \n  Auth service: http://$auth_service_ip/docs\n"
 }
 
 function update_stack() {
@@ -34,6 +58,7 @@ function update_stack() {
 
   aws cloudformation update-stack \
     --stack-name otel-observability \
+    --region $AWS_REGION \
     --template-body file://cloudformation.yml \
     --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND \
     | cat
@@ -47,6 +72,7 @@ function get_stack_status() {
 
     status=$(aws cloudformation describe-stacks \
       --stack-name otel-observability \
+      --region $AWS_REGION \
       --query "Stacks[0].StackStatus" \
       --output text)
 
@@ -72,6 +98,7 @@ function get_ip() {
 
   ip=$(aws cloudformation describe-stacks \
     --stack-name otel-observability \
+    --region $AWS_REGION \
     --query "Stacks[0].Outputs[?OutputKey==\`$output_key\`].OutputValue | [0]" \
     --output text)
 
@@ -81,6 +108,7 @@ function get_ip() {
 function get_queue_url() {
   queue_url=$(aws cloudformation describe-stacks \
     --stack-name otel-observability \
+    --region $AWS_REGION \
     --query "Stacks[0].Outputs[?OutputKey==\`FilesQueueUrl\`].OutputValue | [0]" \
     --output text)
 
@@ -99,15 +127,19 @@ function connect() {
 function destroy() {
   log "Deleting key pair"
 
-  aws ec2 delete-key-pair --key-name otel-observability &> /dev/null
+  aws ec2 delete-key-pair \
+    --region $AWS_REGION \
+    --key-name otel-observability 2>&1 || echo "Error deleting key pair: $?"
 
-  log "Emptying otel-files-service s3 bucket"
+  log "Emptying $S3_BUCKET_NAME s3 bucket"
 
-  aws s3 rm s3://otel-files-service --recursive &> /dev/null
+  aws s3 rm s3://$S3_BUCKET_NAME --recursive 2>&1 || echo "Error emptying bucket: $?"
 
   log "Destroying cloudformation stack"
 
-  aws cloudformation delete-stack --stack-name otel-observability &> /dev/null
+  aws cloudformation delete-stack \
+    --region $AWS_REGION \
+    --stack-name otel-observability 2>&1 || echo "Error deleting stack: $?"
 
   log "Cleaning up"
 
@@ -120,6 +152,7 @@ function output() {
 
   aws cloudformation describe-stacks \
     --stack-name otel-observability \
+    --region $AWS_REGION \
     --query "Stacks[0].Outputs" \
     --output json \
     > outputs.json

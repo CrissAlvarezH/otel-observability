@@ -56,13 +56,16 @@ def copy_content_to_redshift(file: dict):
     print("creating table", table_name, "for file", file["filename"])
     exec_and_wait(redshift, f"""
         CREATE TABLE IF NOT EXISTS "public"."{table_name}" (
+            "timestamp" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            "file_id" VARCHAR(10000) DEFAULT '{file["id"]}'
+            "file_name" VARCHAR(10000) DEFAULT '{file["filename"]}'
             {', '.join([f'"{c}" VARCHAR(10000)' for c in file["columns"]])}
         );
     """)
 
     print("copying data from s3 to redshift to table:", table_name,"file:", file["filename"])
     exec_and_wait(redshift, f"""
-        COPY {table_name}
+        COPY {table_name} ({', '.join([c for c in file["columns"]])})
         FROM 's3://{S3_BUCKET_NAME}/{file['filename']}'
         IAM_ROLE default
         REGION '{AWS_REGION}'
@@ -92,24 +95,27 @@ def exec_and_wait(client: boto3.client, query: str, max_checks: int = 20):
     query_id = stm.get('Id')
 
     last_status = ""
-    status = ""
     checks = 0
-    while status != 'FINISHED':
+    while True:
+        if max_checks  > -1:
+            checks += 1
+            if checks > max_checks:
+                raise Exception("Timeout waiting for copy data to finish")
+
         desc = client.describe_statement(Id=query_id)
         status = desc.get('Status')
 
         # show logs only if status changed
         if last_status != status:
-            print("describe statement:", status, desc, "... waiting 5 seconds")
+            print("describe statement:", status, desc, "... waiting 1 second")
             last_status = status
+
+        if status == 'FINISHED':
+            break
 
         if status == 'FAILED':
             raise Exception("Failed to copy data")
 
-        if max_checks  > -1:
-            checks += 1
-            if checks > max_checks:
-                raise Exception("Timeout waiting for copy data to finish")
-        time.sleep(5)
+        time.sleep(1)
 
     return query_id

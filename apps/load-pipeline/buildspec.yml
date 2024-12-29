@@ -17,6 +17,6 @@ phases:
 
   post_build:
     commands:
-      - aws lambda update-function-code --function-name $LAMBDA_FUNCTION_NAME --zip-file fileb://pipeline-function.zip
-      - aws lambda wait function-updated --function-name $LAMBDA_FUNCTION_NAME
-      - aws lambda update-function-configuration --function-name $LAMBDA_FUNCTION_NAME --environment "Variables={S3_BUCKET_NAME=$S3_BUCKET_NAME,REDSHIFT_WORKGROUP=$REDSHIFT_WORKGROUP,REDSHIFT_DATABASE=$REDSHIFT_DATABASE}"
+      - aws lambda update-function-code --region $AWS_REGION --function-name $LAMBDA_FUNCTION_NAME --zip-file fileb://pipeline-function.zip
+      - aws lambda wait function-updated --region $AWS_REGION --function-name $LAMBDA_FUNCTION_NAME
+      - aws lambda update-function-configuration --region $AWS_REGION --function-name $LAMBDA_FUNCTION_NAME --environment "Variables={S3_BUCKET_NAME=$S3_BUCKET_NAME,REDSHIFT_WORKGROUP=$REDSHIFT_WORKGROUP,REDSHIFT_DATABASE=$REDSHIFT_DATABASE}"

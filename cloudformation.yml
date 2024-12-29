@@ -1,12 +1,55 @@
 AWSTemplateFormatVersion: 2010-09-09
 
-Resources:
+Parameters:
+  BucketName:
+    Description: Bucket where files will be stored
+    Type: String
+    Default: otel-files-service
 
+Mappings:
+  # AMI: Amazon Linux 2 AMI 64-bit (x86) by region
+  RegionMap:
+    ap-south-1:
+      AMI: ami-019cd93943ccead1a
+    eu-north-1:
+      AMI: ami-09d3c9501075e4112
+    eu-west-3:
+      AMI: ami-0584a5ab8f4034679
+    eu-west-2:
+      AMI: ami-0f9e888df95272f70
+    eu-west-1:
+      AMI: ami-0fc56b47fc1f238ee
+    ap-northeast-3:
+      AMI: ami-0217f1c25d44bec66
+    ap-northeast-2:
+      AMI: ami-07a2318163330ee84
+    ap-northeast-1:
+      AMI: ami-0dbca050974482176
+    ca-central-1:
+      AMI: ami-01a9d286de9a4d56e
+    sa-east-1:
+      AMI: ami-06b07a4baf3024a9f
+    ap-southeast-1:
+      AMI: ami-047d5a3391704b8b2
+    ap-southeast-2:
+      AMI: ami-0c372b59cfa8c3d65
+    eu-central-1:
+      AMI: ami-03b7db59d53c5e228
+    us-east-1:
+      AMI: ami-0ac664bd64e1dcc6b
+    us-east-2:
+      AMI: ami-05175b461d18d94d9
+    us-west-1:
+      AMI: ami-0853d0de3297e47e0
+    us-west-2:
+      AMI: ami-06c7fbd87fa7b507c
+
+
+Resources:
   FrontendInstance:
     Type: AWS::EC2::Instance
     Properties:
-      ImageId: ami-03972092c42e8c0ca  # Amazon Linux 2 AMI 64-bit (x86)
-      AvailabilityZone: us-east-1a
+      ImageId: !FindInMap [RegionMap, !Ref AWS::Region, AMI]
       InstanceType: t3.micro
       Tags:
         - Key: Name
@@ -48,8 +91,7 @@ Resources:
   FilesServiceInstance:
     Type: AWS::EC2::Instance
     Properties:
-      ImageId: ami-03972092c42e8c0ca  # Amazon Linux 2 AMI 64-bit (x86)
-      AvailabilityZone: us-east-1a
+      ImageId: !FindInMap [RegionMap, !Ref AWS::Region, AMI]
       InstanceType: t3.micro
       KeyName: otel-observability
       Tags:
@@ -146,8 +188,7 @@ Resources:
   AuthServiceInstance:
     Type: AWS::EC2::Instance
     Properties:
-      ImageId: ami-03972092c42e8c0ca  # Amazon Linux 2 AMI 64-bit (x86)
-      AvailabilityZone: us-east-1a
+      ImageId: !FindInMap [RegionMap, !Ref AWS::Region, AMI]
       InstanceType: t3.micro
       KeyName: otel-observability
       IamInstanceProfile: !Ref AuthServiceInstanceProfile
@@ -221,7 +262,7 @@ Resources:
   Bucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: otel-files-service
+      BucketName: !Ref BucketName
       CorsConfiguration:
         CorsRules:
           - AllowedHeaders: ['*']
@@ -404,7 +445,7 @@ Resources:
         Type: LINUX_CONTAINER
         EnvironmentVariables:
           - Name: AWS_REGION
-            Value: us-east-1
+            Value: !Ref AWS::Region
           - Name: S3_BUCKET_NAME
             Value: !Ref Bucket
           - Name: LAMBDA_FUNCTION_NAME
