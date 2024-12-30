@@ -5,7 +5,6 @@ from .services import (
 
 
 def main(event, context):
-
     for r in event["Records"]:
         process_message(r)
 
