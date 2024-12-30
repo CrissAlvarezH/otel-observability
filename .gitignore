@@ -1,5 +1,5 @@
 .DS_Store
 outputs.json
-otel-observability.pem
+otel-observability*.pem
 __pycache__
 .env

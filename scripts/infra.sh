@@ -20,14 +20,14 @@ function setup() {
   log "Creating key pairs to access instances"
 
   aws ec2 create-key-pair \
-    --key-name otel-observability \
+    --key-name otel-observability-$AWS_REGION \
     --region $AWS_REGION \
     --query 'KeyMaterial' \
-    --output text > otel-observability.pem
+    --output text > "otel-observability-$AWS_REGION.pem"
 
-  chmod 400 otel-observability.pem
+  chmod 400 "otel-observability-$AWS_REGION.pem"
 
-  if [ ! -f "otel-observability.pem" ]; then
+  if [ ! -f "otel-observability-$AWS_REGION.pem" ]; then
     log "An error occurred creating key pairs" "error"
     exit 1
   fi
@@ -121,7 +121,7 @@ function connect() {
   ip=$(get_ip $app)
 
   ssh -o StrictHostKeyChecking=no \
-    -i "./otel-observability.pem" "ec2-user@$ip"
+    -i "./otel-observability-$AWS_REGION.pem" "ec2-user@$ip"
 }
 
 function destroy() {
@@ -129,11 +129,12 @@ function destroy() {
 
   aws ec2 delete-key-pair \
     --region $AWS_REGION \
-    --key-name otel-observability 2>&1 || echo "Error deleting key pair: $?"
+    --key-name otel-observability-$AWS_REGION 2>&1 || echo "Error deleting key pair: $?"
 
-  log "Emptying $S3_BUCKET_NAME s3 bucket"
-
-  aws s3 rm s3://$S3_BUCKET_NAME --recursive 2>&1 || echo "Error emptying bucket: $?"
+  if aws s3 ls s3://$S3_BUCKET_NAME 2>/dev/null; then
+    log "Emptying $S3_BUCKET_NAME s3 bucket"
+    aws s3 rm s3://$S3_BUCKET_NAME --recursive  
+  fi
 
   log "Destroying cloudformation stack"
 
@@ -143,7 +144,7 @@ function destroy() {
 
   log "Cleaning up"
 
-  rm -rf otel-observability.pem
+  rm -rf "otel-observability-$AWS_REGION.pem"
   rm -rf outputs.json
 }
 
@@ -164,6 +165,6 @@ function logs() {
   ip=$(get_ip $app)
 
   ssh -o StrictHostKeyChecking=no \
-    -i "./otel-observability.pem" "ec2-user@$ip" \
+    -i "./otel-observability-$AWS_REGION.pem" "ec2-user@$ip" \
     "docker logs -f otel-$app"
 }

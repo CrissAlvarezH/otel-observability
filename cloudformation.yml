@@ -54,7 +54,7 @@ Resources:
       Tags:
         - Key: Name
           Value: otel-frontend
-      KeyName: otel-observability
+      KeyName: !Sub otel-observability-${AWS::Region}
       SecurityGroups:
         - !Ref FrontendInstanceSecurityGroup
       UserData:
@@ -93,7 +93,7 @@ Resources:
     Properties:
       ImageId: !FindInMap [RegionMap, !Ref AWS::Region, AMI]
       InstanceType: t3.micro
-      KeyName: otel-observability
+      KeyName: !Sub otel-observability-${AWS::Region}
       Tags:
         - Key: Name
           Value: otel-files-service
@@ -138,7 +138,7 @@ Resources:
   FilesServiceInstanceRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: otel-observability-files-service-role
+      RoleName: !Sub otel-observability-files-service-role-${AWS::Region}
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -190,7 +190,7 @@ Resources:
     Properties:
       ImageId: !FindInMap [RegionMap, !Ref AWS::Region, AMI]
       InstanceType: t3.micro
-      KeyName: otel-observability
+      KeyName: !Sub otel-observability-${AWS::Region}
       IamInstanceProfile: !Ref AuthServiceInstanceProfile
       Tags:
         - Key: Name
@@ -235,7 +235,7 @@ Resources:
   AuthServiceInstanceRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: otel-observability-auth-service-role
+      RoleName: !Sub otel-observability-auth-service-role-${AWS::Region}
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -269,6 +269,7 @@ Resources:
             AllowedMethods: [PUT]
             AllowedOrigins: [!Sub 'http://${FrontendInstance.PublicIp}']
             ExposedHeaders: [ETag]
+            MaxAge: 3600 # 1 hour (to avoid cors preflight requests)
 
   DynamoAuthTable:
     Type: AWS::DynamoDB::Table
@@ -323,7 +324,7 @@ Resources:
   PipelineFunctionRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: otel-observability-pipeline-function-role
+      RoleName: !Sub otel-observability-pipeline-function-role-${AWS::Region}
       AssumeRolePolicyDocument: 
         Statement:
           - Action: sts:AssumeRole
@@ -401,7 +402,7 @@ Resources:
   PipelineCodeBuildRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: otel-observability-pipeline-codebuild-role
+      RoleName: !Sub otel-observability-pipeline-codebuild-role-${AWS::Region}
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -489,7 +490,7 @@ Resources:
   RedshiftServerlessIamRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: otel-observability-redshift-serverless-role
+      RoleName: !Sub otel-observability-redshift-serverless-role-${AWS::Region}
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:

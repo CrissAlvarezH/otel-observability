@@ -36,7 +36,7 @@ function deploy_frontend() {
   log "Connecting to frontend instance"
 
   ssh -o StrictHostKeyChecking=no \
-    -i "./otel-observability.pem" ec2-user@"$frontend_ip" << EOF
+    -i "./otel-observability-$AWS_REGION.pem" ec2-user@"$frontend_ip" << EOF
     cd /home/ec2-user/ 
 
     if [ ! -d 'otel-observability' ]; then 
@@ -66,7 +66,7 @@ function deploy_files_service() {
   queue_url=$(get_queue_url)
 
   ssh -o StrictHostKeyChecking=no \
-    -i "./otel-observability.pem" ec2-user@"$files_service_ip" << EOF
+    -i "./otel-observability-$AWS_REGION.pem" ec2-user@"$files_service_ip" << EOF
     cd /home/ec2-user/
 
     if [ ! -d "otel-observability" ]; then 
@@ -95,7 +95,7 @@ function deploy_auth_service() {
   log "Connecting to auth service instance"
 
   ssh -o StrictHostKeyChecking=no \
-    -i "./otel-observability.pem" ec2-user@"$auth_service_ip" << EOF
+    -i "./otel-observability-$AWS_REGION.pem" ec2-user@"$auth_service_ip" << EOF
     cd /home/ec2-user/
 
     if [ ! -d "otel-observability" ]; then 

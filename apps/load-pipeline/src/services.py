@@ -51,14 +51,16 @@ def update_file_status(file_id: str, status: str):
 def copy_content_to_redshift(file: dict):
     redshift = boto3.client('redshift-data', region_name=AWS_REGION)
 
-    table_name = re.sub(r'[^a-zA-Z0-9_]', '_', file["filename"])
+    # remove file extension from filename
+    filename = os.path.splitext(file["filename"])[0]
+    table_name = re.sub(r'[^a-zA-Z0-9_]', '_', filename)
 
     print("creating table", table_name, "for file", file["filename"])
     exec_and_wait(redshift, f"""
         CREATE TABLE IF NOT EXISTS "public"."{table_name}" (
-            "timestamp" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            "file_id" VARCHAR(10000) DEFAULT '{file["id"]}'
-            "file_name" VARCHAR(10000) DEFAULT '{file["filename"]}'
+            "timestamp" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            "file_id" VARCHAR(10000) DEFAULT '{file["id"]}',
+            "file_name" VARCHAR(10000) DEFAULT '{file["filename"]}',
             {', '.join([f'"{c}" VARCHAR(10000)' for c in file["columns"]])}
         );
     """)

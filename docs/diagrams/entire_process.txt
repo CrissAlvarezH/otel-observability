@@ -50,7 +50,6 @@ Load Pipeline > Database: Update file status to "loading"
 Load Pipeline <> Database: Get file information
 Load Pipeline > Warehouse: Create table
 Load Pipeline > Warehouse: Copy file data
-Load Pipeline > Warehouse: Add timestamp column
 Load Pipeline > Database: Update file status to "loaded"
 
 deactivate Load Pipeline
