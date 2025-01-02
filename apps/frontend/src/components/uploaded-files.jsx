@@ -15,6 +15,7 @@ export function UploadedFiles({ refreshUploads }) {
   }, [refreshUploads]);
 
   const callUploadedFiles = () => {
+    setError(null);
     setIsLoading(true);
     fetchUploadedFiles()
       .then(res => setUploadedFiles(res.result))

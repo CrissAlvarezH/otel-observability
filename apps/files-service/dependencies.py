@@ -3,7 +3,6 @@ from opentelemetry import trace
 
 from services.auth import validate_token
 
-print("dependencies.py __name__", __name__)
 tracer = trace.get_tracer(__name__)
 
 async def auth(token: str = Header()):

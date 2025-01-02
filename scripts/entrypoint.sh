@@ -23,6 +23,9 @@ case $action in
   deploy)
     deploy_all
   ;;
+  deploy-one)
+    deploy_one $2
+  ;;
   get-ip)
     get_ip $2
   ;;

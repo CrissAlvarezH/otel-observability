@@ -4,6 +4,8 @@ import { ConfigForm } from './components/config-form';
 import { FileToUpload } from './components/files-to-upload';
 import { UploadedFiles } from './components/uploaded-files';
 
+import "./instrumentation/otel"
+
 
 export default function App() {
   const [files, setFiles] = useState([]);

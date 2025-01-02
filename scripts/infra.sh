@@ -175,7 +175,15 @@ function logs() {
 
   ip=$(get_ip $app)
 
-  ssh -o StrictHostKeyChecking=no \
-    -i "./otel-observability-$AWS_REGION.pem" "ec2-user@$ip" \
-    "docker logs -f otel-$app"
+  if [ "$app" = "observability" ]; then
+    # this one use docker-compose 
+    ssh -o StrictHostKeyChecking=no \
+      -i "./otel-observability-$AWS_REGION.pem" "ec2-user@$ip" \
+      "cd otel-observability/observability && docker-compose logs -f"
+
+  else
+    ssh -o StrictHostKeyChecking=no \
+      -i "./otel-observability-$AWS_REGION.pem" "ec2-user@$ip" \
+      "docker logs -f otel-$app"
+  fi
 }

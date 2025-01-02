@@ -12,7 +12,7 @@ export const DEFAULT_PART_SIZE = 5;
  * @param options.token - The token to use for the upload.
  */
 export async function uploadFileByParts({ file, columns, rowCount }, { batchSize, partSize = DEFAULT_PART_SIZE, onProgress, token } = {}) {
-  const { uploadId, fileId } = await initUpload(file, columns, rowCount, token);
+  const { uploadId, fileId, traceHeaders } = await initUpload(file, columns, rowCount, token);
   const uploadPartJobs = [];
   const partSizeInMB = partSize * 1024 * 1024;
   const totalParts = Math.ceil(file.size / partSizeInMB);
@@ -22,7 +22,7 @@ export async function uploadFileByParts({ file, columns, rowCount }, { batchSize
     uploadPartJobs.push(async () => {
       const part = file.slice((partNumber - 1) * partSizeInMB, partNumber * partSizeInMB);
 
-      const url = await getPresignedUrl(file, uploadId, partNumber, token);
+      const url = await getPresignedUrl(file, uploadId, partNumber, token, traceHeaders);
 
       const etag = await uploadPart(url, part);
 
@@ -43,7 +43,7 @@ export async function uploadFileByParts({ file, columns, rowCount }, { batchSize
     await Promise.all(batch.map(job => job()));
   }
 
-  await completeUpload(file.name, fileId, uploadId, partResults, token);
+  await completeUpload(file.name, fileId, uploadId, partResults, token, traceHeaders);
   onProgress?.(100);
 }
 
@@ -64,8 +64,15 @@ async function initUpload(file, columns, rowCount, token) {
     }
     throw new Error("Failed to initialize multipart upload");
   }
+  const traceHeaders = {}
+  if (initRes.headers.has("traceparent"))
+    traceHeaders["traceparent"] = initRes.headers.get("traceparent")
+  if (initRes.headers.has("tracestate"))
+    traceHeaders["tracestate"] = initRes.headers.get("tracestate")
+
   const { upload_id: uploadId, file_id: fileId } = await initRes.json();
-  return { uploadId, fileId };
+
+  return { uploadId, fileId, traceHeaders };
 }
 
 async function uploadPart(url, part) {
@@ -82,10 +89,10 @@ async function uploadPart(url, part) {
   return uploadRes.headers.get("ETag");
 }
 
-async function getPresignedUrl(file, uploadId, partNumber, token) {
+async function getPresignedUrl(file, uploadId, partNumber, token, traceHeaders) {
   const presignedRes = await fetch(`${API_DOMAIN}/upload/get-presigned-url`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", "Token": token },
+    headers: { "Content-Type": "application/json", "Token": token, ...traceHeaders },
     body: JSON.stringify({
       filename: file.name,
       upload_id: uploadId,
@@ -102,10 +109,10 @@ async function getPresignedUrl(file, uploadId, partNumber, token) {
   return url;
 }
 
-async function completeUpload(fileName, fileId, uploadId, partResults, token) {
+async function completeUpload(fileName, fileId, uploadId, partResults, token, traceHeaders) {
   const completeRes = await fetch(`${API_DOMAIN}/upload/complete`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", "Token": token },
+    headers: { "Content-Type": "application/json", "Token": token, ...traceHeaders },
     body: JSON.stringify({
       file_id: fileId,
       filename: fileName,

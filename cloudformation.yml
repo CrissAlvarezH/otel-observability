@@ -534,6 +534,10 @@ Resources:
           docker --version
           sudo yum install -y git
 
+          sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+          sudo chmod +x /usr/local/bin/docker-compose
+          docker-compose --version
+
   ObservabilityBackendInstanceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -543,20 +547,20 @@ Resources:
       GroupDescription: "observability-backend-service security group"
       SecurityGroupIngress:
         - IpProtocol: tcp
-          FromPort: 80
-          ToPort: 80
+          FromPort: 16686
+          ToPort: 16686
           CidrIp: 0.0.0.0/0
         - IpProtocol: tcp
           FromPort: 22
           ToPort: 22
           CidrIp: 0.0.0.0/0
         - IpProtocol: tcp
-          FromPort: 16686
-          ToPort: 16686
-          CidrIp: 0.0.0.0/0
-        - IpProtocol: tcp
           FromPort: 4317
           ToPort: 4317
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 4318
+          ToPort: 4318
           CidrIp: 0.0.0.0/0
 
 

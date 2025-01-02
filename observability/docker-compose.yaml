@@ -1,0 +1,20 @@
+services:
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: jaeger
+    ports:
+      - "16686:16686"  # UI
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+      - COLLECTOR_OTLP_GRPC_HOST_PORT=:4317
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    container_name: otel-collector
+    volumes:
+      - "./otel-collector-config.yaml:/etc/otel-collector-config.yaml"
+    command: ["--config", "/etc/otel-collector-config.yaml"]
+    ports:
+      - "4317:4317" # receive OTLP gRPC from outside (files-service, auth-service, etc.)
+      - "4318:4318" # receive OTLP HTTP from outside (frontend)

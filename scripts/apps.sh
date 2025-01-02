@@ -12,7 +12,7 @@ function deploy_all() {
 
   run_pipeline_codebuild_deploy
 
-  deploy_frontend $frontend_ip $files_service_ip $auth_service_ip
+  deploy_frontend $frontend_ip $files_service_ip $auth_service_ip $observability_ip
 
   deploy_auth_service $auth_service_ip
 
@@ -25,16 +25,53 @@ function deploy_all() {
   log "Seeding tokens"
   curl -X POST http://$auth_service_ip/seed
 
-  log "\nDeploy finished"
-  log "Frontend: http://$frontend_ip"
-  log "Files service: http://$files_service_ip/docs"
-  log "Auth service: http://$auth_service_ip/docs"
+
+  log "Deploy finished"
+  log "INFRAESTRUCTURE:"
+  echo "  Region: $AWS_REGION"
+  echo "  Bucket: $S3_BUCKET_NAME"
+
+  log "APPLICATIONS:"
+  echo "  Frontend:  http://$frontend_ip"
+  echo "  Files service:  http://$files_service_ip/docs"
+  echo "  Auth service:  http://$auth_service_ip/docs"
+
+  log "OBSERVABILITY:"
+  echo "  Jaeger UI:  http://$observability_ip:16686\n"
+}
+
+function deploy_one() {
+  app=$1
+
+  frontend_ip=$(get_ip frontend)
+  files_service_ip=$(get_ip files-service)
+  auth_service_ip=$(get_ip auth-service)
+  observability_ip=$(get_ip observability)
+
+  if [ "$app" = "pipeline" ]; then
+    run_pipeline_codebuild_deploy
+    wait_for_lambda_codebuild_to_finish $build_id
+  elif [ "$app" = "frontend" ]; then
+    deploy_frontend $frontend_ip $files_service_ip $auth_service_ip $observability_ip
+  elif [ "$app" = "files-service" ]; then
+    deploy_files_service $files_service_ip $auth_service_ip $observability_ip
+  elif [ "$app" = "auth-service" ]; then
+    deploy_auth_service $auth_service_ip
+    log "Seeding tokens"
+    curl -X POST http://$auth_service_ip/seed
+  elif [ "$app" = "observability" ]; then
+    deploy_observability_backend $observability_ip
+  else
+    log "Invalid app"
+    exit 1
+  fi
 }
 
 function deploy_frontend() {
   frontend_ip=$1
   files_service_ip=$2
   auth_service_ip=$3
+  observability_ip=$4
 
   log "Connecting to frontend instance"
 
@@ -53,6 +90,7 @@ function deploy_frontend() {
     cd apps/frontend
     echo 'VITE_API_DOMAIN=http://$files_service_ip' > .env
     echo 'VITE_AUTH_DOMAIN=http://$auth_service_ip' >> .env
+    echo 'VITE_OTLP_EXPORTER_URL=http://$observability_ip:4318/v1/traces' >> .env
     docker build -t otel-frontend .
     docker stop otel-frontend 2>/dev/null || true
     docker rm otel-frontend 2>/dev/null || true
@@ -129,9 +167,17 @@ function deploy_observability_backend() {
     -i "./otel-observability-$AWS_REGION.pem" ec2-user@"$observability_ip" << EOF
     cd /home/ec2-user/
 
-    docker stop jaeger 2>/dev/null || true
-    docker rm jaeger 2>/dev/null || true
-    docker run -d --name jaeger -e COLLECTOR_OTLP_ENABLED=true -p 16686:16686 -p 4317:4317 jaegertracing/all-in-one:latest
+    if [ ! -d 'otel-observability' ]; then 
+      git clone https://github.com/CrissAlvarezH/otel-observability.git
+      cd otel-observability
+    else 
+      cd otel-observability
+      git pull --rebase
+    fi
+
+    cd observability
+    docker-compose down
+    docker-compose up -d
 EOF
 }
 

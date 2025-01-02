@@ -16,6 +16,9 @@ status:
 deploy:
 	sh scripts/entrypoint.sh deploy
 
+deploy-one:
+	sh scripts/entrypoint.sh deploy-one ${app}
+
 get-ip:
 	sh scripts/entrypoint.sh get-ip ${app}
 
