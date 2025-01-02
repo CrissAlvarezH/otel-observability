@@ -51,7 +51,7 @@ function deploy_frontend() {
     fi
 
     cd apps/frontend
-    echo 'VITE_API_DOMAIN=http://$files_service_ip' >> .env
+    echo 'VITE_API_DOMAIN=http://$files_service_ip' > .env
     echo 'VITE_AUTH_DOMAIN=http://$auth_service_ip' >> .env
     docker build -t otel-frontend .
     docker stop otel-frontend 2>/dev/null || true
@@ -82,11 +82,11 @@ function deploy_files_service() {
     fi
 
     cd apps/files-service
-    echo "S3_BUCKET_NAME=$S3_BUCKET_NAME" >> .env
+    echo "S3_BUCKET_NAME=$S3_BUCKET_NAME" > .env
     echo "AUTH_DOMAIN=http://$auth_service_ip" >> .env
     echo "AWS_REGION=$AWS_REGION" >> .env
     echo "SQS_QUEUE_URL=$queue_url" >> .env
-    echo "OTLP_SPAN_EXPORTER_ENDPOINT=http://$observability_ip:16686" >> .env
+    echo "OTLP_SPAN_EXPORTER_ENDPOINT=http://$observability_ip:4317" >> .env
     docker build -t otel-files-service .
     docker stop otel-files-service 2>/dev/null || true
     docker rm otel-files-service 2>/dev/null || true
@@ -112,7 +112,7 @@ function deploy_auth_service() {
     fi
 
     cd apps/auth-service
-    echo "AWS_REGION=$AWS_REGION" >> .env
+    echo "AWS_REGION=$AWS_REGION" > .env
     docker build -t otel-auth-service .
     docker stop otel-auth-service 2>/dev/null || true
     docker rm otel-auth-service 2>/dev/null || true
