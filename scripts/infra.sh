@@ -47,10 +47,19 @@ function info() {
   frontend_ip=$(get_ip frontend)
   files_service_ip=$(get_ip files-service)
   auth_service_ip=$(get_ip auth-service)
+  observability_ip=$(get_ip observability)
 
-  log "INFRAESTRUCTURE:\n  Region: $AWS_REGION \n  Destination bucket: $S3_BUCKET_NAME"
+  log "INFRAESTRUCTURE:"
+  echo "  Region: $AWS_REGION"
+  echo "  Bucket: $S3_BUCKET_NAME"
 
-  log "APPLICATIONS:\n  Frontend: http://$frontend_ip \n  Files service: http://$files_service_ip/docs \n  Auth service: http://$auth_service_ip/docs\n"
+  log "APPLICATIONS:"
+  echo "  Frontend:  http://$frontend_ip"
+  echo "  Files service:  http://$files_service_ip/docs"
+  echo "  Auth service:  http://$auth_service_ip/docs"
+
+  log "OBSERVABILITY:"
+  echo "  Jaeger UI:  http://$observability_ip:16686\n"
 }
 
 function update_stack() {
@@ -91,6 +100,8 @@ function get_ip() {
     output_key="FilesServiceInstancePublicIp"
   elif [ "$app" == "auth-service" ]; then
     output_key="AuthServiceInstancePublicIp"
+  elif [ "$app" == "observability" ]; then
+    output_key="ObservabilityBackendInstancePublicIp"
   else
     log "Invalid app" "error"
     exit 1

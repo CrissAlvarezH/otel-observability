@@ -5,6 +5,8 @@ from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
 load_dotenv()
 
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+
 from repositories.files import (
     get_files, update_file, insert_file, InsertFile, UpdateFile,
     delete_file,
@@ -14,6 +16,7 @@ from services.aws import (
     init_upload, FilePart, complete_upload, get_presigned_url,
     list_multipart_uploads, queue_uploaded_file,
 )
+from instrumentation import trace
 
 app = FastAPI()
 
@@ -24,6 +27,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+FastAPIInstrumentor.instrument_app(app)
 
 
 @app.post("/upload/init")
@@ -71,9 +76,11 @@ def complete_upload_route(
         ))
         return {"message": "Upload failed"}
 
-    update_file(file_id, UpdateFile(
-        status="stored",
-    ))
+    tracer = trace.get_tracer(__name__)
+    with tracer.start_as_current_span("update-file-status"):
+        update_file(file_id, UpdateFile(
+            status="stored",
+        ))
     queue_uploaded_file(file_id, filename)
     return {"message": "Upload completed"}
 

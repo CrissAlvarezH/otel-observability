@@ -8,6 +8,7 @@ function deploy_all() {
   frontend_ip=$(get_ip frontend)
   files_service_ip=$(get_ip files-service)
   auth_service_ip=$(get_ip auth-service)
+  observability_ip=$(get_ip observability)
 
   run_pipeline_codebuild_deploy
 
@@ -15,7 +16,9 @@ function deploy_all() {
 
   deploy_auth_service $auth_service_ip
 
-  deploy_files_service $files_service_ip $auth_service_ip
+  deploy_files_service $files_service_ip $auth_service_ip $observability_ip
+
+  deploy_observability_backend $observability_ip
 
   wait_for_lambda_codebuild_to_finish $build_id
 
@@ -60,6 +63,7 @@ EOF
 function deploy_files_service() {
   files_service_ip=$1
   auth_service_ip=$2
+  observability_ip=$3
 
   log "Connecting to files service instance"
 
@@ -82,6 +86,7 @@ function deploy_files_service() {
     echo "AUTH_DOMAIN=http://$auth_service_ip" >> .env
     echo "AWS_REGION=$AWS_REGION" >> .env
     echo "SQS_QUEUE_URL=$queue_url" >> .env
+    echo "OTLP_SPAN_EXPORTER_ENDPOINT=http://$observability_ip:16686" >> .env
     docker build -t otel-files-service .
     docker stop otel-files-service 2>/dev/null || true
     docker rm otel-files-service 2>/dev/null || true
@@ -112,6 +117,21 @@ function deploy_auth_service() {
     docker stop otel-auth-service 2>/dev/null || true
     docker rm otel-auth-service 2>/dev/null || true
     docker run -d -p 80:80 --name otel-auth-service otel-auth-service
+EOF
+}
+
+function deploy_observability_backend() {
+  observability_ip=$1
+
+  log "Connecting to observability backend instance"
+
+  ssh -o StrictHostKeyChecking=no \
+    -i "./otel-observability-$AWS_REGION.pem" ec2-user@"$observability_ip" << EOF
+    cd /home/ec2-user/
+
+    docker stop jaeger 2>/dev/null || true
+    docker rm jaeger 2>/dev/null || true
+    docker run -d --name jaeger -e COLLECTOR_OTLP_ENABLED=true -p 16686:16686 -p 4317:4317 jaegertracing/all-in-one:latest
 EOF
 }
 

@@ -513,6 +513,53 @@ Resources:
                   - !Sub arn:aws:s3:::${Bucket}/*
                   - !Sub arn:aws:s3:::${Bucket}
 
+  ObservabilityBackendInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !FindInMap [RegionMap, !Ref AWS::Region, AMI]
+      InstanceType: t3.medium
+      KeyName: !Sub otel-observability-${AWS::Region}
+      Tags:
+        - Key: Name
+          Value: observability-backend-service
+      SecurityGroups:
+        - !Ref ObservabilityBackendInstanceSecurityGroup
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          sudo yum update -y
+          sudo yum install -y docker
+          sudo service docker start
+          sudo usermod -a -G docker ec2-user
+          docker --version
+          sudo yum install -y git
+
+  ObservabilityBackendInstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      Tags:
+        - Key: Name
+          Value: observability-backend-sg
+      GroupDescription: "observability-backend-service security group"
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 16686
+          ToPort: 16686
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 4317
+          ToPort: 4317
+          CidrIp: 0.0.0.0/0
+
+
 Outputs:
   FrontendInstancePublicIp:
     Description: Public IP of the frontend instance
@@ -525,6 +572,10 @@ Outputs:
   AuthServiceInstancePublicIp:
     Description: Public IP of the auth service instance
     Value: !GetAtt AuthServiceInstance.PublicIp
+
+  ObservabilityBackendInstancePublicIp:
+    Description: Public IP of the observability backend instance
+    Value: !GetAtt ObservabilityBackendInstance.PublicIp
 
   FilesQueueUrl:
     Description: URL of the files queue
