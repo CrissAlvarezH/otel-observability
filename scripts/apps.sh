@@ -18,7 +18,7 @@ function deploy_all() {
 
   deploy_files_service $files_service_ip $auth_service_ip $observability_ip
 
-  deploy_observability_backend $observability_ip
+  deploy_observability_backend $observability_ip $frontend_ip
 
   wait_for_lambda_codebuild_to_finish $build_id
 
@@ -60,7 +60,7 @@ function deploy_one() {
     log "Seeding tokens"
     curl -X POST http://$auth_service_ip/seed
   elif [ "$app" = "observability" ]; then
-    deploy_observability_backend $observability_ip
+    deploy_observability_backend $observability_ip $frontend_id
   else
     log "Invalid app"
     exit 1
@@ -160,6 +160,7 @@ EOF
 
 function deploy_observability_backend() {
   observability_ip=$1
+  frontend_id=$2
 
   log "Connecting to observability backend instance"
 
@@ -176,6 +177,9 @@ function deploy_observability_backend() {
     fi
 
     cd observability
+
+    echo "ALLOWED_ORIGINS=http://localhost:5173,http://$frontend_id" > .env
+
     docker-compose down
     docker-compose up -d
 EOF
