@@ -67,6 +67,7 @@ export function FileToUpload({ file, uploadConfig, onRemove, onUploadSuccess, on
         ) : (
           <>
             <button
+              id="btn-upload-file"
               className="hover:bg-gray-100 rounded-md p-2 transition-colors"
               onClick={() => handleUpload(file)}
               disabled={isUploading}

@@ -1,10 +1,11 @@
+import "./instrumentation/otel"
+
 import { useState } from 'react'
 import { FilePickerButton } from './components/file-picker-btn';
 import { ConfigForm } from './components/config-form';
 import { FileToUpload } from './components/files-to-upload';
 import { UploadedFiles } from './components/uploaded-files';
 
-import "./instrumentation/otel"
 
 
 export default function App() {

@@ -16,7 +16,21 @@ const provider = new WebTracerProvider({
     [ATTR_SERVICE_NAME]: "frontend"
   }),
   spanProcessors: [
-    new BatchSpanProcessor(exporter)
+    new BatchSpanProcessor(exporter),
+    {
+      onStart: (span) => {
+        if (span.name == "click") {
+          // change the name of the span from "click" to "click:<element-id>"
+          const xpath =span.attributes["target_xpath"]
+          if (xpath.includes("id=")) {
+            // example: //*[@id="input-pick-file"]
+            const id = xpath.split("id=")[1].split("\"")[1]
+            span.updateName(`click:${id}`)
+          }
+        }
+      },
+      onEnd: () => {}
+    }
   ]
 })
 provider.register()
