@@ -14,7 +14,7 @@ function deploy_all() {
 
   deploy_frontend $frontend_ip $files_service_ip $auth_service_ip $observability_ip
 
-  deploy_auth_service $auth_service_ip
+  deploy_auth_service $auth_service_ip $observability_ip
 
   deploy_files_service $files_service_ip $auth_service_ip $observability_ip
 
@@ -56,7 +56,7 @@ function deploy_one() {
   elif [ "$app" = "files-service" ]; then
     deploy_files_service $files_service_ip $auth_service_ip $observability_ip
   elif [ "$app" = "auth-service" ]; then
-    deploy_auth_service $auth_service_ip
+    deploy_auth_service $auth_service_ip $observability_ip
     log "Seeding tokens"
     curl -X POST http://$auth_service_ip/seed
   elif [ "$app" = "observability" ]; then
@@ -134,6 +134,7 @@ EOF
 
 function deploy_auth_service() {
   auth_service_ip=$1
+  observability_ip=$2
 
   log "Connecting to auth service instance"
 
@@ -151,6 +152,7 @@ function deploy_auth_service() {
 
     cd apps/auth-service
     echo "AWS_REGION=$AWS_REGION" > .env
+    echo "OTLP_SPAN_EXPORTER_ENDPOINT=http://$observability_ip/v1/traces" > .env
     docker build -t otel-auth-service .
     docker stop otel-auth-service 2>/dev/null || true
     docker rm otel-auth-service 2>/dev/null || true

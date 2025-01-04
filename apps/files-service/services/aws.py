@@ -21,7 +21,6 @@ def init_upload(filename: str) -> str:
             span.set_attributes({
                 "filename": filename,
                 "bucket": BUCKET_NAME,
-                "table": "otel-observability-files"
             })
 
             s3 = boto3.client('s3', region_name=AWS_REGION)
@@ -30,11 +29,13 @@ def init_upload(filename: str) -> str:
                 Bucket=BUCKET_NAME,
                 Key=filename
             )
-            return response['UploadId']
+            id = response['UploadId']
+            span.set_attribute("upload.id", id)
+            return id
         except Exception as e:
             span.set_status(StatusCode.ERROR, str(e))
             span.record_exception(e)
-            raise
+            raise e
 
 
 def get_presigned_url(filename: str, upload_id: str, part_number: int) -> str:
@@ -60,7 +61,7 @@ def get_presigned_url(filename: str, upload_id: str, part_number: int) -> str:
         except Exception as e:
             span.set_status(StatusCode.ERROR, str(e))
             span.record_exception(e)
-            raise
+            raise e
 
 
 def complete_upload(filename: str, upload_id: str, parts: List[FilePart]):
@@ -68,7 +69,6 @@ def complete_upload(filename: str, upload_id: str, parts: List[FilePart]):
         try:
             span.set_attributes({
                 "filename": filename, "bucket": BUCKET_NAME, "upload_id": upload_id,
-                "table": "otel-observability-files"
             })
 
             s3 = boto3.client('s3', region_name=AWS_REGION)
@@ -82,7 +82,7 @@ def complete_upload(filename: str, upload_id: str, parts: List[FilePart]):
         except Exception as e:
             span.set_status(StatusCode.ERROR, str(e))
             span.record_exception(e)
-            raise
+            raise e
 
 
 def list_multipart_uploads() -> list[str]:
@@ -96,7 +96,6 @@ def queue_uploaded_file(file_id: str, file_name: str):
         try:
             span.set_attributes({
                 "file_id": file_id, "file_name": file_name, "queue": SQS_QUEUE_URL,
-                "table": "otel-observability-files"
             })
 
             sqs = boto3.client('sqs', region_name=AWS_REGION)

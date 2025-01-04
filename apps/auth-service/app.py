@@ -4,8 +4,12 @@ load_dotenv()
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, Body, Response
 
-from repository import add_token, scan_tokens, get_token, seed_tokens
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
+from repository import add_token, scan_tokens, get_token, seed_tokens
+from instrumentation import setup_tracing
+
+setup_tracing()
 
 app = FastAPI()
 
@@ -17,6 +21,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+FastAPIInstrumentor.instrument_app(app)
 
 @app.post("/validate")
 def validate_token(

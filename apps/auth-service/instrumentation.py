@@ -11,7 +11,7 @@ from config import OTLP_SPAN_EXPORTER_ENDPOINT
 def setup_tracing():
   BotocoreInstrumentor().instrument()
 
-  resource = Resource.create({SERVICE_NAME: "files-service"})
+  resource = Resource.create({SERVICE_NAME: "auth-service"})
 
   tracer_provider = TracerProvider(resource=resource)
 

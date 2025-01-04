@@ -3,6 +3,7 @@ from typing import List
 from fastapi import FastAPI, Body, Query, Path, Depends, Request, Response
 from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
+
 load_dotenv()
 
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
@@ -44,26 +45,21 @@ def init_upload_route(
     row_count: int = Body(),
     username: str = Depends(get_username),
 ):
-    tags = {
+    span = trace.get_current_span()
+    span.set_attributes({
         "file.name": filename, "file.size": file_size,
         "file.rows": row_count, "file.columns": columns
-    }
+    })
 
-    with tracer.start_as_current_span("init-upload-on-s3") as span:
-        span.set_attributes(tags)
-        upload_id = init_upload(filename)
-        span.set_attribute("upload.id", upload_id)
+    upload_id = init_upload(filename)
 
-    with tracer.start_as_current_span("insert-file-in-db") as span:
-        span.set_attributes(tags)
-        file_id = insert_file(InsertFile(
-            filename=filename,
-            file_size=file_size,
-            username=username,
-            columns=columns,
-            row_count=row_count,
-        ))
-        span.set_attribute("file.id", file_id)
+    file_id = insert_file(InsertFile(
+        filename=filename,
+        file_size=file_size,
+        username=username,
+        columns=columns,
+        row_count=row_count,
+    ))
 
     return {"upload_id": upload_id, "file_id": file_id}
 
@@ -74,13 +70,13 @@ def get_presigned_url_route(
     upload_id: str = Body(),
     part_number: int = Body(),
 ):
-    with tracer.start_as_current_span("get-presigner-url-on-s3") as span:
-        span.set_attributes({
-            "upload.id": upload_id, "part.number": part_number,
-            "file.name": filename
-        })
+    span = trace.get_current_span()
+    span.set_attributes({
+        "upload.id": upload_id, "part.number": part_number,
+        "file.name": filename
+    })
 
-        presigned_url = get_presigned_url(filename, upload_id, part_number)
+    presigned_url = get_presigned_url(filename, upload_id, part_number)
 
     return {"url": presigned_url}
 
@@ -92,31 +88,24 @@ def complete_upload_route(
     upload_id: str = Body(),
     parts: List[FilePart] = Body(),
 ):
-    tags = {
+    span = trace.get_current_span()
+    span.set_attributes({
         "file.id": file_id, "file.name": filename,
         "upload.id": upload_id, "parts.count": len(parts)
-    }
+    })
+    try:
+        complete_upload(filename, upload_id, parts)
+    except Exception as e:
+        print(e)
+        span.set_status(trace.StatusCode.ERROR)
+        span.set_attribute("error", str(e))
 
-    with tracer.start_as_current_span("complete-upload-on-s3") as span:
-        span.set_attributes(tags)
-        try:
-            complete_upload(filename, upload_id, parts)
-        except Exception as e:
-            print(e)
-            span.set_status(trace.StatusCode.ERROR)
-            span.set_attribute("error", str(e))
+        update_file(file_id, UpdateFile( status="failed"))
+        return {"message": "Upload failed"}
 
-            update_file(file_id, UpdateFile( status="failed"))
-            return {"message": "Upload failed"}
+    update_file(file_id, UpdateFile(status="stored"))
 
-    with tracer.start_as_current_span("update-file-status") as span:
-        span.set_attributes(tags)
-        span.set_attribute("file.status", "stored")
-        update_file(file_id, UpdateFile( status="stored"))
-
-    with tracer.start_as_current_span("queue-uploaded-file") as span:
-        span.set_attributes(tags)
-        queue_uploaded_file(file_id, filename)
+    queue_uploaded_file(file_id, filename)
 
     return {"message": "Upload completed"}
 

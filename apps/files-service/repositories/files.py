@@ -38,11 +38,10 @@ class File(BaseModel):
 def get_files(page_size: int = 10, last_id: str = None):
     with tracer.start_as_current_span("get_files") as span:
         try:
-            # Add attributes to the span
             span.set_attributes({
-                "page_size": page_size,
-                "last_id": last_id or "None",
-                "table": "otel-observability-files"
+                "query.page_size": page_size,
+                "query.last_id": last_id or "None",
+                "table.name": "otel-observability-files"
             })
             
             dynamodb = boto3.resource('dynamodb', region_name=AWS_REGION)
@@ -60,7 +59,6 @@ def get_files(page_size: int = 10, last_id: str = None):
             
             rs = table.query(**query_params)
             
-            # Add result information to span
             span.set_attributes({
                 "result.count": len(rs.get('Items', [])),
                 "result.has_more": 'LastEvaluatedKey' in rs
@@ -81,9 +79,9 @@ def insert_file(file: InsertFile) -> str:
     with tracer.start_as_current_span("insert_file") as span:
         try:
             span.set_attributes({
-                "filename": file.filename,
-                "file_size": file.file_size,
-                "table": "otel-observability-files"
+                "file.filename": file.filename,
+                "file.size": file.file_size,
+                "table.name": "otel-observability-files"
             })
             
             db = boto3.client('dynamodb', region_name=AWS_REGION)
@@ -120,9 +118,9 @@ def update_file(id: str, file: UpdateFile):
     with tracer.start_as_current_span("update_file") as span:
         try:
             span.set_attributes({
-                "id": id,
-                "status": file.status,
-                "table": "otel-observability-files"
+                "file.id": id,
+                "file.status": file.status,
+                "table.name": "otel-observability-files"
             })
 
             db = boto3.client('dynamodb', region_name=AWS_REGION)
