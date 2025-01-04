@@ -5,9 +5,12 @@ import { Resource } from "@opentelemetry/resources"
 import { ATTR_SERVICE_NAME } from "@opentelemetry/semantic-conventions"
 import { registerInstrumentations } from "@opentelemetry/instrumentation"
 import { getWebAutoInstrumentations } from "@opentelemetry/auto-instrumentations-web" 
+import { W3CTraceContextPropagator } from "@opentelemetry/core"
+import { propagation } from "@opentelemetry/api"
 
 import { OTLP_EXPORTER_URL } from "./../lib/config"
 
+propagation.setGlobalPropagator(new W3CTraceContextPropagator())
 
 const exporter = new OTLPTraceExporter({ url: OTLP_EXPORTER_URL })
 
@@ -33,9 +36,15 @@ const provider = new WebTracerProvider({
     }
   ]
 })
+
 provider.register()
 
 registerInstrumentations({
-  instrumentations: [getWebAutoInstrumentations()]
+  instrumentations: [getWebAutoInstrumentations({
+    "@opentelemetry/instrumentation-fetch": {
+      propagateTraceHeaderCorsUrls: /.*/,  // Propagate to all URLs
+      clearTimingResources: true,
+    },
+  })]
 })
 

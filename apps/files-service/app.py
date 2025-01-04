@@ -7,7 +7,6 @@ load_dotenv()
 
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from opentelemetry import trace
-from opentelemetry.propagate import inject, extract
 
 from repositories.files import (
     get_files, update_file, insert_file, InsertFile, UpdateFile,
@@ -39,8 +38,6 @@ tracer = trace.get_tracer(__name__)
 
 @app.post("/upload/init")
 def init_upload_route(
-    req: Request,
-    res: Response,
     filename: str = Body(),
     file_size: int = Body(),
     columns: List[str] = Body(),
@@ -68,13 +65,11 @@ def init_upload_route(
         ))
         span.set_attribute("file.id", file_id)
 
-    inject(res.headers)
     return {"upload_id": upload_id, "file_id": file_id}
 
 
 @app.post("/upload/get-presigned-url", dependencies=[Depends(auth)])
 def get_presigned_url_route(
-    req: Request,
     filename: str = Body(),
     upload_id: str = Body(),
     part_number: int = Body(),
@@ -92,7 +87,6 @@ def get_presigned_url_route(
 
 @app.post("/upload/complete", dependencies=[Depends(auth)])
 def complete_upload_route(
-    req: Request,
     file_id: str = Body(),
     filename: str = Body(),
     upload_id: str = Body(),
