@@ -237,7 +237,7 @@ Resources:
     Properties:
       RoleName: !Sub otel-observability-auth-service-role-${AWS::Region}
       AssumeRolePolicyDocument:
-        Version: 2012-10-17
+        Version: '2012-10-17'
         Statement:
           - Effect: Allow
             Principal:
@@ -246,7 +246,7 @@ Resources:
       Policies:
         - PolicyName: DynamoDBAccessPolicy
           PolicyDocument:
-            Version: 2012-10-17
+            Version: '2012-10-17'
             Statement:
               - Effect: Allow
                 Action:
@@ -326,36 +326,37 @@ Resources:
     Properties:
       RoleName: !Sub otel-observability-pipeline-function-role-${AWS::Region}
       AssumeRolePolicyDocument: 
+        Version: '2012-10-17'
         Statement:
-          - Action: sts:AssumeRole
-            Effect: Allow
+          - Effect: Allow
             Principal:
               Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
       Policies:
         - PolicyName: SQSAccessPolicy
           PolicyDocument:
-            Version: 2012-10-17
+            Version: '2012-10-17'
             Statement:
               - Effect: Allow
                 Action:
                   - sqs:ReceiveMessage
                   - sqs:DeleteMessage
                   - sqs:GetQueueAttributes
-                Resource:
-                  - !GetAtt FilesQueue.Arn
+                Resource: !GetAtt FilesQueue.Arn
         - PolicyName: DynamoDBAccessPolicy
           PolicyDocument:
-            Version: 2012-10-17
+            Version: '2012-10-17'
             Statement:
               - Effect: Allow
                 Action:
                   - dynamodb:GetItem
                   - dynamodb:UpdateItem
-                Resource:
-                  - !GetAtt DynamoFilesTable.Arn
+                Resource: !GetAtt DynamoFilesTable.Arn
         - PolicyName: RedshiftServerlessAccessPolicy
           PolicyDocument:
-            Version: 2012-10-17
+            Version: '2012-10-17'
             Statement:
               - Effect: Allow
                 Action:
@@ -364,10 +365,7 @@ Resources:
                   - redshift-data:GetStatementResult
                   - redshift-data:DescribeStatement
                   - redshift-data:ListStatements
-                Resource:
-                  - "*"
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+                Resource: '*'
           
   PipelineFunctionLogs:
     Type: AWS::Logs::LogGroup

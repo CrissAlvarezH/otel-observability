@@ -152,7 +152,7 @@ function deploy_auth_service() {
 
     cd apps/auth-service
     echo "AWS_REGION=$AWS_REGION" > .env
-    echo "OTLP_SPAN_EXPORTER_ENDPOINT=http://$observability_ip/v1/traces" > .env
+    echo "OTLP_SPAN_EXPORTER_ENDPOINT=http://$observability_ip:4317" >> .env
     docker build -t otel-auth-service .
     docker stop otel-auth-service 2>/dev/null || true
     docker rm otel-auth-service 2>/dev/null || true
