@@ -3,10 +3,13 @@ from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExport
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.sdk.resources import Resource
+from opentelemetry.instrumentation.botocore import BotocoreInstrumentor
 
 from config import OTLP_SPAN_EXPORTER_ENDPOINT
 
 def setup_tracing():
+  BotocoreInstrumentor().instrument()
+
   resource = Resource.create({"service.name": "files-service"})
 
   tracer_provider = TracerProvider(resource=resource)

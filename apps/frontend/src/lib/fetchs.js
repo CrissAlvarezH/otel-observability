@@ -10,7 +10,6 @@ export async function fetchWithSpan(spanName, url, options) {
   return context.with(ctx, async () => {
     try {
       const headers = options.headers || {}
-      // propagation.inject(ctx, headers)
 
       const res = await fetch(url, { ...options, headers });
       if (!res.ok) {
