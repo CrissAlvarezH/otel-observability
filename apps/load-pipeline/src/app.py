@@ -13,22 +13,33 @@ tracer = trace.get_tracer(__name__)
 
 
 def main(event, context):
-    with tracer.start_as_current_span("main") as span:
-        try:
-            span.set_attribute("event", event)
+    for r in event["Records"]:
+        process_message(r)
 
-            for r in event["Records"]:
-                process_message(r)
+    # with tracer.start_as_current_span("main") as span:
+    #     try:
+    #         span.set_attribute("event", event)
 
-        except Exception as e:
-            span.set_status(StatusCode.ERROR, str(e))
-            span.record_exception(e)
-            span.set_attribute({"error": True})
-            raise e
+    #         for r in event["Records"]:
+    #             process_message(r)
+
+    #     except Exception as e:
+    #         span.set_status(StatusCode.ERROR, str(e))
+    #         span.record_exception(e)
+    #         span.set_attribute({"error": True})
+    #         raise e
 
 
 def process_message(msg):
-    with tracer.start_as_current_span("process_message") as span:
+    # create a link with the message producer
+    trace_id = msg["messageAttributes"]["trace_id"]["stringValue"]
+    span_id = msg["messageAttributes"]["span_id"]["stringValue"]
+    span_link = trace.Link(trace.SpanContext(
+        trace_id=int(trace_id), span_id=int(span_id), is_remote=True, 
+        trace_flags=trace.TraceFlags.SAMPLED, trace_state=trace.TraceState() 
+    ))
+
+    with tracer.start_as_current_span("process_message", links=[span_link]) as span:
         file_id = msg["messageAttributes"]["file_id"]["stringValue"]
         file_name = msg["messageAttributes"]["file_name"]["stringValue"]
 

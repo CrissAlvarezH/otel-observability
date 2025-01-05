@@ -110,6 +110,15 @@ def queue_uploaded_file(file_id: str, file_name: str):
                     "file_name": {
                         "DataType": "String",
                         "StringValue": file_name,
+                    },
+                    # attributes to create a link with the load pipeline
+                    "trace_id": {
+                        "DataType": "String",
+                        "StringValue": str(span.get_span_context().trace_id),
+                    },
+                    "span_id": {
+                        "DataType": "String",
+                        "StringValue": str(span.get_span_context().span_id),
                     }
                 }
             )
