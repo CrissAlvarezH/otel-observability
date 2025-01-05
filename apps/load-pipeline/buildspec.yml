@@ -5,8 +5,9 @@ phases:
     runtime-versions:
       python: 3.9
     commands:
-      - pip install poetry
+      - pip install "poetry==2.0.0"
       - cd apps/load-pipeline
+      - poetry self add poetry-plugin-export
       - poetry export --without-hashes --format=requirements.txt --output=requirements.txt
       - pip install -r requirements.txt --target ./package
       - cp -r src ./package/src

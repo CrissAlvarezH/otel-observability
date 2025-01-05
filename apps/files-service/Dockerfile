@@ -4,7 +4,9 @@ WORKDIR /code
 
 COPY ./pyproject.toml /code/pyproject.toml
 
-RUN pip install poetry
+RUN pip install "poetry==2.0.0"
+
+RUN poetry self add poetry-plugin-export
 
 RUN poetry export -f requirements.txt --output requirements.txt
 
