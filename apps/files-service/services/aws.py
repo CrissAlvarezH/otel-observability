@@ -15,74 +15,77 @@ class FilePart(BaseModel):
     ETag: str
 
 
+@tracer.start_as_current_span("init_upload") 
 def init_upload(filename: str) -> str:
-    with tracer.start_as_current_span("init_upload") as span:
-        try:
-            span.set_attributes({
-                "filename": filename,
-                "bucket": BUCKET_NAME,
-            })
+    span = trace.get_current_span()
+    try:
+        span.set_attributes({
+            "filename": filename,
+            "bucket": BUCKET_NAME,
+        })
 
-            s3 = boto3.client('s3', region_name=AWS_REGION)
+        s3 = boto3.client('s3', region_name=AWS_REGION)
 
-            response = s3.create_multipart_upload(
-                Bucket=BUCKET_NAME,
-                Key=filename
-            )
-            id = response['UploadId']
-            span.set_attribute("upload.id", id)
-            return id
-        except Exception as e:
-            span.set_status(StatusCode.ERROR, str(e))
-            span.record_exception(e)
-            raise e
+        response = s3.create_multipart_upload(
+            Bucket=BUCKET_NAME,
+            Key=filename
+        )
+        id = response['UploadId']
+        span.set_attribute("upload.id", id)
+        return id
+    except Exception as e:
+        span.set_status(StatusCode.ERROR, str(e))
+        span.record_exception(e)
+        raise e
 
 
+@tracer.start_as_current_span("get_presigned_url") 
 def get_presigned_url(filename: str, upload_id: str, part_number: int) -> str:
-    with tracer.start_as_current_span("get_presigned_url") as span:
-        try:
-            span.set_attributes({
-                "filename": filename, "bucket": BUCKET_NAME, "upload_id": upload_id,
-                "part_number": part_number, "table": "otel-observability-files"
-            })
+    span = trace.get_current_span()
+    try:
+        span.set_attributes({
+            "filename": filename, "bucket": BUCKET_NAME, "upload_id": upload_id,
+            "part_number": part_number, "table": "otel-observability-files"
+        })
 
-            s3 = boto3.client('s3', region_name=AWS_REGION)
+        s3 = boto3.client('s3', region_name=AWS_REGION)
 
-            return s3.generate_presigned_url(
-                'upload_part',
-                Params={
-                    'Bucket': BUCKET_NAME,
-                    'Key': filename,
-                    'UploadId': upload_id,
-                    'PartNumber': part_number,
-                },
-                ExpiresIn=3600  # 1 hour
-            )
-        except Exception as e:
-            span.set_status(StatusCode.ERROR, str(e))
-            span.record_exception(e)
-            raise e
+        return s3.generate_presigned_url(
+            'upload_part',
+            Params={
+                'Bucket': BUCKET_NAME,
+                'Key': filename,
+                'UploadId': upload_id,
+                'PartNumber': part_number,
+            },
+            ExpiresIn=3600  # 1 hour
+        )
+    except Exception as e:
+        span.set_status(StatusCode.ERROR, str(e))
+        span.record_exception(e)
+        raise e
 
 
+@tracer.start_as_current_span("complete_upload") 
 def complete_upload(filename: str, upload_id: str, parts: List[FilePart]):
-    with tracer.start_as_current_span("complete_upload") as span:
-        try:
-            span.set_attributes({
-                "filename": filename, "bucket": BUCKET_NAME, "upload_id": upload_id,
-            })
+    span = trace.get_current_span()
+    try:
+        span.set_attributes({
+            "filename": filename, "bucket": BUCKET_NAME, "upload_id": upload_id,
+        })
 
-            s3 = boto3.client('s3', region_name=AWS_REGION)
+        s3 = boto3.client('s3', region_name=AWS_REGION)
 
-            s3.complete_multipart_upload(
-                Bucket=BUCKET_NAME,
-                Key=filename,
-                UploadId=upload_id,
-                MultipartUpload={'Parts': [part.model_dump() for part in parts]},
-            )
-        except Exception as e:
-            span.set_status(StatusCode.ERROR, str(e))
-            span.record_exception(e)
-            raise e
+        s3.complete_multipart_upload(
+            Bucket=BUCKET_NAME,
+            Key=filename,
+            UploadId=upload_id,
+            MultipartUpload={'Parts': [part.model_dump() for part in parts]},
+        )
+    except Exception as e:
+        span.set_status(StatusCode.ERROR, str(e))
+        span.record_exception(e)
+        raise e
 
 
 def list_multipart_uploads() -> list[str]:

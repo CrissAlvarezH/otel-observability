@@ -7,7 +7,6 @@ tracer = trace.get_tracer(__name__)
 
 async def auth(token: str = Header()):
     with tracer.start_as_current_span("auth") as span:
-
         if not token:
             span.set_status(trace.StatusCode.ERROR)
             span.set_attribute("error", "token not provided")
