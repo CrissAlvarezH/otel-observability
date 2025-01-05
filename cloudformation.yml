@@ -453,6 +453,8 @@ Resources:
             Value: !Ref RedshiftServerlessWorkgroup
           - Name: REDSHIFT_DATABASE
             Value: otel-observability
+          - Name: OTLP_SPAN_EXPORTER_ENDPOINT
+            Value: !Sub "http://${ObservabilityBackendInstance.PublicIp}:4318/v1/traces"
       Artifacts:
         Type: NO_ARTIFACTS
       TimeoutInMinutes: 15

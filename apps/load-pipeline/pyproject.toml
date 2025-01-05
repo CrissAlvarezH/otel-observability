@@ -6,12 +6,11 @@ authors = ["Cristian Alvarez H <alvarezhernandezcristian1@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "3.9"
+python = "^3.9"
+opentelemetry-api = "^1.29.0"
 opentelemetry-sdk = "^1.29.0"
 opentelemetry-exporter-otlp = "^1.29.0"
-opentelemetry-instrumentation = "^0.50b0"
-opentelemetry-instrumentation-aws-lambda = "^0.50b0"
-requests = "^2.32.3"
+opentelemetry-instrumentation-botocore = "^0.50b0"
 
 
 [build-system]

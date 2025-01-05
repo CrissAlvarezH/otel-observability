@@ -368,6 +368,26 @@ opentelemetry-propagator-aws-xray = ">=1.0,<2.0"
 opentelemetry-semantic-conventions = "0.50b0"
 
 [[package]]
+name = "opentelemetry-instrumentation-botocore"
+version = "0.50b0"
+description = "OpenTelemetry Botocore instrumentation"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "opentelemetry_instrumentation_botocore-0.50b0-py3-none-any.whl", hash = "sha256:450c6f43adf3ce917d6832b9a4cc2ce7c8554ef0c0a2ce39eccc086fd5cdf741"},
+    {file = "opentelemetry_instrumentation_botocore-0.50b0.tar.gz", hash = "sha256:ffe856f24e1275cb9694bfdda49240d08a01f191b4725fdbd2b4622bea6aeed7"},
+]
+
+[package.dependencies]
+opentelemetry-api = ">=1.12,<2.0"
+opentelemetry-instrumentation = "0.50b0"
+opentelemetry-propagator-aws-xray = ">=1.0,<2.0"
+opentelemetry-semantic-conventions = "0.50b0"
+
+[package.extras]
+instruments = ["botocore (>=1.0,<2.0)"]
+
+[[package]]
 name = "opentelemetry-propagator-aws-xray"
 version = "1.0.2"
 description = "AWS X-Ray Propagator for OpenTelemetry"
@@ -601,5 +621,5 @@ type = ["pytest-mypy"]
 
 [metadata]
 lock-version = "2.0"
-python-versions = "^3.12"
-content-hash = "7082ca4909f1f95bd41034a155351aa65586f5de8a326aa2d61c299813e361b0"
+python-versions = "^3.9"
+content-hash = "1cc337e411d5d5702ea2c2802a1050eb78db104b499afbb9744c92760c80a503"
