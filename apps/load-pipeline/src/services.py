@@ -45,7 +45,7 @@ def get_file_metadata(file_id: str):
 
 
 def update_file_status(file_id: str, status: str):
-    with tracer.start_as_current_span("updte_file_status") as span:
+    with tracer.start_as_current_span("update_file_status") as span:
         try:
             span.set_attributes({
                 "file.id": file_id, "file.status": status, 
@@ -106,6 +106,7 @@ def copy_content_to_redshift(file: dict):
         except Exception as e:
             span.set_status(trace.StatusCode.ERROR, str(e))
             span.record_exception(e)
+            raise e
 
 
 def exec_and_wait(client: boto3.client, query: str, max_checks: int = 20):
@@ -118,9 +119,9 @@ def exec_and_wait(client: boto3.client, query: str, max_checks: int = 20):
             query: query to execute
             max_checks: maximum number of checks to wait for the query to finish (-1 for infinite)
     """
-    with tracer.start_as_current_span("exec_and_wait_query") as span:
+    with tracer.start_as_current_span("exec_and_wait_query") as exec_span:
         try:
-            span.set_attribute("warehouse.query", query )
+            exec_span.set_attribute("warehouse.query", query )
 
             stm = client.execute_statement(
                 WorkgroupName=REDSHIFT_WORKGROUP,
@@ -132,22 +133,22 @@ def exec_and_wait(client: boto3.client, query: str, max_checks: int = 20):
 
             query_id = stm.get('Id')
 
-            span.set_attribute("query.id", query_id)
+            exec_span.set_attribute("query.id", query_id)
 
             last_status = ""
             checks = 0
             while True:
-                with tracer.start_as_current_span("check-query-status") as span:
+                with tracer.start_as_current_span("check-query-status") as check_span:
                     if max_checks  > -1:
                         checks += 1
                         if checks > max_checks:
-                            span.add_event("max-checks")
+                            check_span.add_event("max-checks")
                             raise Exception("Timeout waiting for copy data to finish")
 
                     desc = client.describe_statement(Id=query_id)
                     status = desc.get('Status')
 
-                    span.set_attribute("warehouse.query.status", status)
+                    check_span.set_attribute("warehouse.query.status", status)
 
                     # show logs only if status changed
                     if last_status != status:
@@ -155,17 +156,18 @@ def exec_and_wait(client: boto3.client, query: str, max_checks: int = 20):
                         last_status = status
 
                     if status == 'FINISHED':
+                        check_span.add_event("warehouse.query.finished")
                         break
 
                     if status == 'FAILED':
-                        span.set_attribute("error", True)
+                        check_span.add_event("warehouse.query.failed")
+                        check_span.set_attribute("error", True)
                         raise Exception("Failed to copy data")
 
                     time.sleep(1)
 
             return query_id
         except Exception as e:
-            print("error", e)
-            span.set_status(trace.StatusCode.ERROR, str(e))
-            span.record_exception(e)
-
+            exec_span.set_status(trace.StatusCode.ERROR, str(e))
+            exec_span.record_exception(e)
+            raise e
