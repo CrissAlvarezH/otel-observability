@@ -22,10 +22,11 @@ Y cuenta con los siguientes componentes en su arquitectura (orientada a aws)
 <img src="https://github.com/CrissAlvarezH/otel-observability/blob/main/docs/images/entire_process_diagram.png"/>
 
 # Resultado final
-## Trazabilidad distribuida (Jaeguer UI)
+## Trazabilidad distribuida (Jaeger UI)
 ### Trazabilidad del proceso de carga de archivo a S3 desde el frontend hasta la cola sqs
 <img src="https://github.com/CrissAlvarezH/otel-observability/blob/main/docs/images/tracing_jaeger_ui.png"/>
-### Trazabilidad desde el lambda "load pipeline" que toma el mensaje del sqs
+
+### Trazabilidad desde el lambda "load pipeline" que toma el mensaje del sqs (span link)
 <img src="https://github.com/CrissAlvarezH/otel-observability/blob/main/docs/images/tracing_jaeger_ui_pipeline.png"/>
 
 
