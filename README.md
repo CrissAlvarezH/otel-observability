@@ -21,6 +21,13 @@ Y cuenta con los siguientes componentes en su arquitectura (orientada a aws)
 
 <img src="https://github.com/CrissAlvarezH/otel-observability/blob/main/docs/images/entire_process_diagram.png"/>
 
+# Resultado final
+## Trazabilidad distribuida (Jaeguer UI)
+### Trazabilidad del proceso de carga de archivo a S3 desde el frontend hasta la cola sqs
+<img src="https://github.com/CrissAlvarezH/otel-observability/blob/main/docs/images/tracing_jaeger_ui.png"/>
+### Trazabilidad desde el lambda "load pipeline" que toma el mensaje del sqs
+<img src="https://github.com/CrissAlvarezH/otel-observability/blob/main/docs/images/tracing_jaeger_ui_pipeline.png"/>
+
 
 # Correr el proyecto
 
@@ -59,9 +66,17 @@ Una vez terminado el deploy verás en la console las urls de acceso a cada una d
 Ejemplo:
 
 ```bash
-Frontend: http://34.0.10.10/
-Files Service: http://34.0.10.10/docs
-Auth Service: http://34.0.10.10/docs
+INFRAESTRUCTURE:
+  Region: us-east-1
+  Bucket: otel-files-service-4
+
+APPLICATIONS:
+  Frontend:  http://3.83.235.90
+  Files service:  http://100.26.106.3/docs
+  Auth service:  http://3.92.212.128/docs
+
+OBSERVABILITY:
+  Jaeger UI:  http://34.205.76.200:16686
 ```
 
 ## A tener en cuenta
