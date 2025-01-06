@@ -1,5 +1,4 @@
 from opentelemetry import trace
-from opentelemetry.trace import StatusCode
 
 from .services import (
     update_file_status, copy_content_to_redshift, 
@@ -12,28 +11,21 @@ setup_instrumentation()
 tracer = trace.get_tracer(__name__)
 
 
+@tracer.start_as_current_span("main") 
 def main(event, context):
-    with tracer.start_as_current_span("main") as span:
-        try:
-            span.set_attribute("event", event)
+    span = trace.get_current_span()
+    span.set_attribute("event", event)
 
-            for r in event["Records"]:
-                process_message(r)
-
-        except Exception as e:
-            span.set_status(StatusCode.ERROR, str(e))
-            span.record_exception(e)
-            span.set_attribute({"error": True})
-            raise e
+    for r in event["Records"]:
+        process_message(r)
 
 
 @tracer.start_as_current_span("process_message")
 def process_message(msg):
+    span = trace.get_current_span()
     # create a link with the message producer
     trace_id = msg["messageAttributes"]["trace_id"]["stringValue"]
     span_id = msg["messageAttributes"]["span_id"]["stringValue"]
-
-    span = trace.get_current_span()
     span.add_link(trace.SpanContext(
         trace_id=int(trace_id), span_id=int(span_id), is_remote=True, 
         trace_flags=trace.TraceFlags.SAMPLED, trace_state=trace.TraceState() 

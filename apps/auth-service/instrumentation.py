@@ -8,6 +8,7 @@ from opentelemetry.semconv.attributes.service_attributes import SERVICE_NAME
 
 from config import OTLP_SPAN_EXPORTER_ENDPOINT
 
+
 def setup_tracing():
   BotocoreInstrumentor().instrument()
 

@@ -16,100 +16,87 @@ tracer = trace.get_tracer(__name__)
 @tracer.start_as_current_span("get_file_metadata")
 def get_file_metadata(file_id: str):
     span = trace.get_current_span()
-    try:
-        span.set_attributes({"file.id": file_id, "table.name": "otel-observability-files"})
+    span.set_attributes({"file.id": file_id, "table.name": "otel-observability-files"})
 
-        db = boto3.client('dynamodb', region_name=AWS_REGION)
-        res = db.get_item(
-            TableName='otel-observability-files',
-            Key={'id': {'S': file_id}},
-        )
-        if res.get('ResponseMetadata', {}).get('HTTPStatusCode') != 200:
-            raise Exception("Failed to get file metadata")
+    db = boto3.client('dynamodb', region_name=AWS_REGION)
+    res = db.get_item(
+        TableName='otel-observability-files',
+        Key={'id': {'S': file_id}},
+    )
+    if res.get('ResponseMetadata', {}).get('HTTPStatusCode') != 200:
+        raise Exception("Failed to get file metadata")
 
-        item = res.get('Item', None)
-        if not item:
-            raise Exception("File not found")
+    item = res.get('Item', None)
+    if not item:
+        raise Exception("File not found")
 
-        # transform dynamodb format to a dict
-        data = {}
-        for k, v in item.items():
-            if "L" in v:
-                data[k] = [c['S'] for c in v['L']]
-            else:
-                data[k] = v['S'] if "S" in v else v['N']
+    # transform dynamodb format to a dict
+    data = {}
+    for k, v in item.items():
+        if "L" in v:
+            data[k] = [c['S'] for c in v['L']]
+        else:
+            data[k] = v['S'] if "S" in v else v['N']
 
-        return data
-    except Exception as e:
-        span.set_status(trace.StatusCode.ERROR, str(e))
-        span.record_exception(e)
+    return data
 
 
 @tracer.start_as_current_span("update_file_status") 
 def update_file_status(file_id: str, status: str):
     span = trace.get_current_span()
-    try:
-        span.set_attributes({
-            "file.id": file_id, "file.status": status, 
-            "table.name": "otel-observability-files"
-        })
+    span.set_attributes({
+        "file.id": file_id, "file.status": status, 
+        "table.name": "otel-observability-files"
+    })
 
-        db = boto3.client('dynamodb', region_name=AWS_REGION)
-        res = db.update_item(
-            TableName='otel-observability-files',
-            Key={'id': {'S': file_id}},
-            # #st is a placeholder for status because status is a reserved word
-            UpdateExpression='set #st = :status',
-            ExpressionAttributeNames={'#st': 'status'},
-            ExpressionAttributeValues={':status': {'S': status}},
-        )
-        if res.get('ResponseMetadata', {}).get('HTTPStatusCode') != 200:
-            raise Exception("Failed to update file")
-    except Exception as e:
-        span.set_status(trace.StatusCode.ERROR, str(e))
-        span.record_exception(e)
+    db = boto3.client('dynamodb', region_name=AWS_REGION)
+    res = db.update_item(
+        TableName='otel-observability-files',
+        Key={'id': {'S': file_id}},
+        # #st is a placeholder for status because status is a reserved word
+        UpdateExpression='set #st = :status',
+        ExpressionAttributeNames={'#st': 'status'},
+        ExpressionAttributeValues={':status': {'S': status}},
+    )
+    if res.get('ResponseMetadata', {}).get('HTTPStatusCode') != 200:
+        raise Exception("Failed to update file")
 
 
 @tracer.start_as_current_span("copy_content_to_redshift") 
 def copy_content_to_redshift(file: dict):
     span = trace.get_current_span()
-    try:
-        span.set_attributes({
-            "file.name": file["filename"], "file.id": file["id"], 
-            "file.columns": file["columns"], "bucket.name": S3_BUCKET_NAME
-        })
+    span.set_attributes({
+        "file.name": file["filename"], "file.id": file["id"], 
+        "file.columns": file["columns"], "bucket.name": S3_BUCKET_NAME
+    })
 
-        redshift = boto3.client('redshift-data', region_name=AWS_REGION)
+    redshift = boto3.client('redshift-data', region_name=AWS_REGION)
 
-        # remove file extension from filename
-        filename = os.path.splitext(file["filename"])[0]
-        table_name = re.sub(r'[^a-zA-Z0-9_]', '_', filename)
+    # remove file extension from filename
+    filename = os.path.splitext(file["filename"])[0]
+    table_name = re.sub(r'[^a-zA-Z0-9_]', '_', filename)
 
-        span.set_attribute("wharehouse.table.name", table_name)
+    span.set_attribute("wharehouse.table.name", table_name)
 
-        print("creating table", table_name, "for file", file["filename"])
-        exec_and_wait(redshift, f"""
-            CREATE TABLE IF NOT EXISTS "public"."{table_name}" (
-                "timestamp" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                "file_id" VARCHAR(10000) DEFAULT '{file["id"]}',
-                "file_name" VARCHAR(10000) DEFAULT '{file["filename"]}',
-                {', '.join([f'"{c}" VARCHAR(10000)' for c in file["columns"]])}
-            );
-        """)
+    print("creating table", table_name, "for file", file["filename"])
+    exec_and_wait(redshift, f"""
+        CREATE TABLE IF NOT EXISTS "public"."{table_name}" (
+            "timestamp" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            "file_id" VARCHAR(10000) DEFAULT '{file["id"]}',
+            "file_name" VARCHAR(10000) DEFAULT '{file["filename"]}',
+            {', '.join([f'"{c}" VARCHAR(10000)' for c in file["columns"]])}
+        );
+    """)
 
-        print("copying data from s3 to redshift to table:", table_name,"file:", file["filename"])
-        exec_and_wait(redshift, f"""
-            COPY {table_name} ({', '.join([f'"{c}"' for c in file["columns"]])})
-            FROM 's3://{S3_BUCKET_NAME}/{file['filename']}'
-            IAM_ROLE default
-            REGION '{AWS_REGION}'
-            IGNOREHEADER 1
-            FORMAT CSV;
-        """, max_checks=-1)
-    except Exception as e:
-        span.set_status(trace.StatusCode.ERROR, str(e))
-        span.record_exception(e)
-        raise e
+    print("copying data from s3 to redshift to table:", table_name,"file:", file["filename"])
+    exec_and_wait(redshift, f"""
+        COPY {table_name} ({', '.join([f'"{c}"' for c in file["columns"]])})
+        FROM 's3://{S3_BUCKET_NAME}/{file['filename']}'
+        IAM_ROLE default
+        REGION '{AWS_REGION}'
+        IGNOREHEADER 1
+        FORMAT CSV;
+    """, max_checks=-1)
 
 
 @tracer.start_as_current_span("exec_and_wait_query") 
@@ -124,54 +111,49 @@ def exec_and_wait(client: boto3.client, query: str, max_checks: int = 20):
             max_checks: maximum number of checks to wait for the query to finish (-1 for infinite)
     """
     exec_span = trace.get_current_span()
-    try:
-        exec_span.set_attribute("warehouse.query", query )
+    exec_span.set_attribute("warehouse.query", query)
 
-        stm = client.execute_statement(
-            WorkgroupName=REDSHIFT_WORKGROUP,
-            Database=REDSHIFT_DATABASE,
-            Sql=query
-        )
-        if stm.get('ResponseMetadata', {}).get('HTTPStatusCode') != 200:
-            raise Exception("Failed to execute statement")
+    stm = client.execute_statement(
+        WorkgroupName=REDSHIFT_WORKGROUP,
+        Database=REDSHIFT_DATABASE,
+        Sql=query
+    )
+    if stm.get('ResponseMetadata', {}).get('HTTPStatusCode') != 200:
+        raise Exception("Failed to execute statement")
 
-        query_id = stm.get('Id')
+    query_id = stm.get('Id')
 
-        exec_span.set_attribute("query.id", query_id)
+    exec_span.set_attribute("query.id", query_id)
 
-        last_status = ""
-        checks = 0
-        while True:
-            with tracer.start_as_current_span("check-query-status") as check_span:
-                if max_checks  > -1:
-                    checks += 1
-                    if checks > max_checks:
-                        check_span.add_event("max-checks")
-                        raise Exception("Timeout waiting for copy data to finish")
+    last_status = ""
+    checks = 0
+    while True:
+        with tracer.start_as_current_span("check-query-status") as check_span:
+            if max_checks  > -1:
+                checks += 1
+                if checks > max_checks:
+                    check_span.add_event("max-checks")
+                    raise Exception("Timeout waiting for copy data to finish")
 
-                desc = client.describe_statement(Id=query_id)
-                status = desc.get('Status')
+            desc = client.describe_statement(Id=query_id)
+            status = desc.get('Status')
 
-                check_span.set_attribute("warehouse.query.status", status)
+            check_span.set_attribute("warehouse.query.status", status)
 
-                # show logs only if status changed
-                if last_status != status:
-                    print("describe statement:", status, desc, "... waiting 1 second")
-                    last_status = status
+            # show logs only if status changed
+            if last_status != status:
+                print("describe statement:", status, desc, "... waiting 1 second")
+                last_status = status
 
-                if status == 'FINISHED':
-                    check_span.add_event("warehouse.query.finished")
-                    break
+            if status == 'FINISHED':
+                check_span.add_event("warehouse.query.finished")
+                break
 
-                if status == 'FAILED':
-                    check_span.add_event("warehouse.query.failed")
-                    check_span.set_attribute("error", True)
-                    raise Exception("Failed to copy data")
+            if status == 'FAILED':
+                check_span.add_event("warehouse.query.failed")
+                check_span.set_attribute("error", True)
+                raise Exception("Failed to copy data")
 
-                time.sleep(1)
+            time.sleep(1)
 
-        return query_id
-    except Exception as e:
-        exec_span.set_status(trace.StatusCode.ERROR, str(e))
-        exec_span.record_exception(e)
-        raise e
+    return query_id
