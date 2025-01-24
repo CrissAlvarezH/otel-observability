@@ -8,11 +8,11 @@ import { getWebAutoInstrumentations } from "@opentelemetry/auto-instrumentations
 import { W3CTraceContextPropagator } from "@opentelemetry/core"
 import { propagation } from "@opentelemetry/api"
 
-import { OTLP_EXPORTER_URL } from "./../lib/config"
+import { OTLP_COLLECTOR_ENDPOINT } from "./../lib/config"
 
 propagation.setGlobalPropagator(new W3CTraceContextPropagator())
 
-const exporter = new OTLPTraceExporter({ url: OTLP_EXPORTER_URL })
+const exporter = new OTLPTraceExporter({ url: OTLP_COLLECTOR_ENDPOINT })
 
 const provider = new WebTracerProvider({
   resource: new Resource({

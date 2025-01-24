@@ -8,13 +8,13 @@ from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.instrumentation.botocore import BotocoreInstrumentor
 from opentelemetry.semconv.resource import ResourceAttributes
 
-OTLP_SPAN_EXPORTER_ENDPOINT = os.getenv("OTLP_SPAN_EXPORTER_ENDPOINT")
+OTLP_COLLECTOR_ENDPOINT = os.getenv("OTLP_COLLECTOR_ENDPOINT")
 
 
 def setup_instrumentation():
     BotocoreInstrumentor().instrument()
 
-    exporter = OTLPSpanExporter(endpoint=OTLP_SPAN_EXPORTER_ENDPOINT)
+    exporter = OTLPSpanExporter(endpoint=OTLP_COLLECTOR_ENDPOINT)
     # use simple processor to avoid batching and losing spans because of timeout of 15 minutes
     # of the execution lambda function
     processor = SimpleSpanProcessor(exporter) 

@@ -6,7 +6,7 @@ from opentelemetry.sdk.resources import Resource
 from opentelemetry.instrumentation.botocore import BotocoreInstrumentor
 from opentelemetry.semconv.attributes.service_attributes import SERVICE_NAME
 
-from config import OTLP_SPAN_EXPORTER_ENDPOINT
+from config import OTLP_COLLECTOR_ENDPOINT
 
 def setup_tracing():
   BotocoreInstrumentor().instrument()
@@ -15,7 +15,7 @@ def setup_tracing():
 
   tracer_provider = TracerProvider(resource=resource)
 
-  otel_exporter = OTLPSpanExporter(endpoint=OTLP_SPAN_EXPORTER_ENDPOINT, insecure=True)
+  otel_exporter = OTLPSpanExporter(endpoint=OTLP_COLLECTOR_ENDPOINT, insecure=True)
   span_processor = BatchSpanProcessor(otel_exporter)
   tracer_provider.add_span_processor(span_processor)
 

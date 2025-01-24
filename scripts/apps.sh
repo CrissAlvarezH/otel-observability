@@ -90,7 +90,7 @@ function deploy_frontend() {
     cd apps/frontend
     echo 'VITE_API_DOMAIN=http://$files_service_ip' > .env
     echo 'VITE_AUTH_DOMAIN=http://$auth_service_ip' >> .env
-    echo 'VITE_OTLP_EXPORTER_URL=http://$observability_ip:4318/v1/traces' >> .env
+    echo 'VITE_OTLP_COLLECTOR_ENDPOINT=http://$observability_ip:4318/v1/traces' >> .env
     docker build -t otel-frontend .
     docker stop otel-frontend 2>/dev/null || true
     docker rm otel-frontend 2>/dev/null || true
@@ -124,7 +124,7 @@ function deploy_files_service() {
     echo "AUTH_DOMAIN=http://$auth_service_ip" >> .env
     echo "AWS_REGION=$AWS_REGION" >> .env
     echo "SQS_QUEUE_URL=$queue_url" >> .env
-    echo "OTLP_SPAN_EXPORTER_ENDPOINT=http://$observability_ip:4317" >> .env
+    echo "OTLP_COLLECTOR_ENDPOINT=http://$observability_ip:4317" >> .env
     docker build -t otel-files-service .
     docker stop otel-files-service 2>/dev/null || true
     docker rm otel-files-service 2>/dev/null || true
@@ -152,7 +152,7 @@ function deploy_auth_service() {
 
     cd apps/auth-service
     echo "AWS_REGION=$AWS_REGION" > .env
-    echo "OTLP_SPAN_EXPORTER_ENDPOINT=http://$observability_ip:4317" >> .env
+    echo "OTLP_COLLECTOR_ENDPOINT=http://$observability_ip:4317" >> .env
     docker build -t otel-auth-service .
     docker stop otel-auth-service 2>/dev/null || true
     docker rm otel-auth-service 2>/dev/null || true
