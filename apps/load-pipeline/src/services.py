@@ -152,7 +152,14 @@ def exec_and_wait(client: boto3.client, query: str, max_checks: int = 20):
             if status == 'FAILED':
                 check_span.add_event("warehouse.query.failed")
                 check_span.set_attribute("error", True)
-                raise Exception("Failed to copy data")
+                
+                error_message = desc.get('Error', '')
+                if 'Failed to set ClientInfo property: ApplicationName' in error_message:
+                    # This is a known non-critical error, continue execution
+                    status = 'FINISHED'
+                    break
+                else:
+                    raise Exception(f"Failed to copy data: {error_message}")
 
             time.sleep(1)
 
